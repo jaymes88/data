@@ -13,6 +13,10 @@ D = pd.read_pickle('delivery.pkl')
 BANDS = ['1–9', '10–24', '25–49', '50–99', '100+']
 GROUPS = {'1–24 units': ['1–9', '10–24'], '25–99 units': ['25–49', '50–99'], '100+ units': ['100+']}
 D['group'] = D.band.map({b: g for g, bs in GROUPS.items() for b in bs})
+D['sector'] = np.where(D.owner.str.startswith('Public'), 'Public', 'Private')
+NBO = ['City Centre', 'Kings Island', 'Corbally/Grove Island', 'Singland/Garryowen', 'Castletroy/Annacotty', 'Southhill',
+       'Dooradoyle', 'Ballinacurra', 'Caherdavin']
+OWNO = ['Public – local authority', 'Public – approved housing body', 'Public – LDA', 'Private']
 PERMITTED = D[D.status != 'In planning'].copy()   # schemes with permission
 STATUS4 = ['Complete', 'Under construction', 'Not started – permission live', 'Not started – past expiry']
 PERMITTED['status4'] = PERMITTED.status.replace({'Stalled (CIS)': 'Not started – permission live'})
@@ -91,6 +95,34 @@ T['4c Implementation by type'] = impl('dwelling_type', ['Houses', 'Mixed', 'Apar
 T['4d Implementation by route'] = impl('route', ['Standard planning application', 'LRD', 'SHD (An Bord Pleanála)', 'Part 8 / council'])
 T['4e Implementation by settlement'] = impl('settlement').sort_values('Units permitted', ascending=False)
 
+T['4f Implementation by owner'] = impl('owner', OWNO)
+T['4g Implementation by sector'] = impl('sector', ['Public', 'Private'])
+T['4h Implementation by nbhd'] = impl('nbhd', NBO + ['Outside city neighbourhoods'])
+t12 = PERMITTED.pivot_table(index='nbhd', columns='status4', values='units', aggfunc='sum', fill_value=0).reindex(NBO + ['Outside city neighbourhoods']).reindex(columns=STATUS4, fill_value=0).fillna(0)
+t12.insert(0, 'Schemes', PERMITTED.groupby('nbhd').size().reindex(t12.index).fillna(0).astype(int))
+t12['Total units'] = t12[STATUS4].sum(axis=1)
+t12['Public units'] = PERMITTED[PERMITTED.sector == 'Public'].groupby('nbhd').units.sum().reindex(t12.index).fillna(0)
+t12['Public share (%)'] = (100 * t12['Public units'] / t12['Total units'].replace(0, np.nan)).round(0)
+T['12 Status by nbhd'] = t12.reset_index().rename(columns={'nbhd': 'Neighbourhood'})
+rows = []
+for sec in ['Public', 'Private']:
+    d = D[D.sector == sec]
+    rows.append({'Sector': sec, 'Schemes': len(d), 'Units': d.units.sum(),
+                 'Approval: median': q(d.approval_yrs, .5), 'Grant to start: median': q(d.grant_to_start_yrs, .5),
+                 'Grant to start: n': d.grant_to_start_yrs.notna().sum(), 'Start to completion: median': q(d.start_to_complete_yrs, .5),
+                 'Start to completion: n': d.start_to_complete_yrs.notna().sum(), 'Build rate (dpa): median': q(d.build_rate_dpa, .5)})
+T['2b Timeline by sector'] = pd.DataFrame(rows)
+rows = []
+for sec in ['Public', 'Private']:
+    d = PERMITTED[PERMITTED.sector == sec]
+    r = {'Sector': sec}
+    for t in [1, 2, 3, 4, 5]:
+        v, n = start_curve(d, t)
+        r[f'Started within {t} yr (%)'] = v
+        r[f'n ({t} yr)'] = n
+    rows.append(r)
+T['3b Started over time by sector'] = pd.DataFrame(rows)
+
 # ---------- T5 planning process effects ----------
 rows = []
 for lab, m in [('No further information, no appeal', ~D.fi & ~D.appealed), ('Further information requested', D.fi & ~D.appealed),
@@ -117,8 +149,8 @@ t6 = t6.drop(columns=[c for c in t6.columns if c in ('Unknown', 'Outside county'
 t6['Total units'] = t6.sum(axis=1)
 t6.insert(0, 'Schemes', NS.groupby('window').size().reindex(WIN).fillna(0).astype(int))
 T['6 Expiry of unstarted'] = t6.reset_index().rename(columns={'window': 'Expiry window'})
-watch = NS.sort_values(['expiry', 'units'], ascending=[True, False])[['ref', 'site', 'heading', 'settlement', 'lea', 'units', 'band', 'dwelling_type', 'final_grant', 'expiry', 'window', 'stage', 'last_updated', 'barriers_noted']]
-T['7 Expiry watchlist'] = watch.rename(columns={'ref': 'Planning ref', 'site': 'Site ID', 'heading': 'Scheme', 'settlement': 'Settlement', 'lea': 'LEA', 'units': 'Units', 'band': 'Size band', 'dwelling_type': 'Type', 'final_grant': 'Permission granted', 'expiry': 'Expiry', 'window': 'Expiry window', 'stage': 'CIS stage', 'last_updated': 'Last CIS update', 'barriers_noted': 'CIS notes'})
+watch = NS.sort_values(['expiry', 'units'], ascending=[True, False])[['ref', 'site', 'heading', 'settlement', 'lea', 'nbhd', 'owner', 'units', 'band', 'dwelling_type', 'final_grant', 'expiry', 'window', 'stage', 'last_updated', 'barriers_noted']]
+T['7 Expiry watchlist'] = watch.rename(columns={'ref': 'Planning ref', 'site': 'Site ID', 'heading': 'Scheme', 'settlement': 'Settlement', 'lea': 'LEA', 'nbhd': 'Neighbourhood', 'owner': 'Owner', 'units': 'Units', 'band': 'Size band', 'dwelling_type': 'Type', 'final_grant': 'Permission granted', 'expiry': 'Expiry', 'window': 'Expiry window', 'stage': 'CIS stage', 'last_updated': 'Last CIS update', 'barriers_noted': 'CIS notes'})
 
 # ---------- T8 annual flows ----------
 yrs = list(range(2018, 2027))
@@ -165,6 +197,11 @@ T['11 Data sources'] = pd.DataFrame([
     ('Completed schemes with a completion certificate', (cc.ccc_count > 0).sum()),
     ('Units on completed schemes (CIS)', cc.units.sum()),
     ('Units on completion certificates for those schemes', cc.ccc_units.sum()),
+    ('Part 8 schemes in study', (D.route == 'Part 8 / council').sum()),
+    ('Part 8 schemes added from the register (not in CIS)', (D.source != 'CIS').sum()),
+    ('Units on Part 8 schemes added from the register', D.loc[D.source != 'CIS', 'units'].sum()),
+    ('Public schemes (local authority, AHB, LDA)', (D.sector == 'Public').sum()),
+    ('Units on public schemes', D.loc[D.sector == 'Public', 'units'].sum()),
 ], columns=['Item', 'Value'])
 
 # ================= CHARTS =================
@@ -282,25 +319,70 @@ ax.axis('off')
 ax.legend(handles=[Line2D([0], [0], marker='o', color='w', markerfacecolor=c, markersize=8, label=l) for c, l in zip([C[0], C[2], C[3]], ['Started or complete', 'Not started – permission live', 'Not started – past expiry'])], loc='upper center', bbox_to_anchor=(0.5, -0.01), ncol=3, fontsize=8)
 ax.text(0.99, 0.01, 'Circle area ∝ units. LEA boundaries: Tailte Éireann (2019).', transform=ax.transAxes, ha='right', fontsize=7, color=INK2)
 save(fig, 'c6_map_county')
-# city inset
-fig, ax = plt.subplots(figsize=(7.2, 5.0))
+# city map with neighbourhood boundaries
+nbh = json.load(open('nbh.geojson'))
+fig, ax = plt.subplots(figsize=(7.2, 5.6))
 for f in lea['features']:
     g = shape(f['geometry'])
-    polys = [g] if g.geom_type == 'Polygon' else list(g.geoms)
-    for p in polys:
+    for p in ([g] if g.geom_type == 'Polygon' else list(g.geoms)):
         x, y = p.exterior.xy
-        ax.fill(x, y, color='#f3f2ef', edgecolor='#b7b6b0', linewidth=0.8)
-for k, s in enumerate(['Started or complete', 'Not started – permission live', 'Not started – past expiry']):
-    d = PERMITTED[PERMITTED.map3 == s]
+        ax.fill(x, y, color='#fafaf8', edgecolor='#d6d5d0', linewidth=0.5)
+XL, YL = (-8.72, -8.47), (52.605, 52.705)
+from shapely.geometry import box
+VIEW = box(XL[0], YL[0], XL[1], YL[1])
+for f in nbh['features']:
+    g = shape(f['geometry'])
+    for p in ([g] if g.geom_type == 'Polygon' else list(g.geoms)):
+        x, y = p.exterior.xy
+        ax.fill(x, y, color='#eceae4', edgecolor='#5b5a56', linewidth=1.2, zorder=1)
+for k, st_ in enumerate(['Started or complete', 'Not started – permission live', 'Not started – past expiry']):
+    d = PERMITTED[PERMITTED.map3 == st_]
     ax.scatter(d.lon, d.lat, s=np.clip(d.units.fillna(1), 1, 400) * 0.8 + 10, color=[C[0], C[2], C[3]][k], alpha=0.85,
-               edgecolor='white', linewidth=0.8, label=s, zorder=3)
-ax.set_xlim(-8.76, -8.50); ax.set_ylim(52.60, 52.70)
+               edgecolor='white', linewidth=0.8, zorder=3)
+for f in nbh['features']:
+    g = shape(f['geometry']).intersection(VIEW)
+    if g.is_empty:
+        continue
+    c = g.representative_point()
+    nm = f['properties']['nbhd'].replace('Kings Island', "King's Island")
+    ax.text(c.x, c.y, nm, fontsize=7.5, color=INK, ha='center', va='center', zorder=4,
+            bbox=dict(facecolor='white', edgecolor='#b7b6b0', boxstyle='round,pad=0.25', alpha=0.9))
+ax.set_xlim(*XL); ax.set_ylim(*YL)
 ax.set_aspect(1 / np.cos(np.radians(52.65)))
 ax.axis('off')
-ax.legend(handles=[Line2D([0], [0], marker='o', color='w', markerfacecolor=c, markersize=8, label=l) for c, l in zip([C[0], C[2], C[3]], ['Started or complete', 'Not started – permission live', 'Not started – past expiry'])], loc='upper center', bbox_to_anchor=(0.5, -0.01), ncol=3, fontsize=8)
-for n, (x, y) in {'City East': (-8.555, 52.668), 'City North': (-8.64, 52.69), 'City West': (-8.70, 52.63)}.items():
-    ax.text(x, y, n, fontsize=8, color=INK2)
+ax.legend(handles=[Line2D([0], [0], marker='o', color='w', markerfacecolor=c, markersize=8, label=l) for c, l in
+                   zip([C[0], C[2], C[3]], ['Started or complete', 'Not started – permission live', 'Not started – past expiry'])],
+          loc='upper center', bbox_to_anchor=(0.5, -0.01), ncol=3, fontsize=8)
 save(fig, 'c7_map_city')
+
+# C9 status by neighbourhood
+t12c = T['12 Status by nbhd'].set_index('Neighbourhood').loc[NBO]
+fig, ax = plt.subplots(figsize=(7.2, 3.6))
+left = np.zeros(len(NBO))
+for k, st_ in enumerate(STATUS4):
+    v = t12c[st_].values
+    ax.barh(NBO, v, left=left, color=C[k], height=0.6, label=st_, edgecolor='white', linewidth=1.5)
+    left += v
+for i, tot in enumerate(left):
+    ax.text(tot + 15, i, f'{int(tot):,}', va='center', fontsize=8, color=INK)
+ax.invert_yaxis()
+ax.set_xlabel('Units with permission')
+ax.grid(axis='y', visible=False)
+ax.legend(loc='lower center', bbox_to_anchor=(0.4, -0.38), ncol=2, fontsize=8)
+save(fig, 'c9_status_by_nbhd')
+
+# C10 public vs private start curves
+t3b = T['3b Started over time by sector'].set_index('Sector')
+fig, ax = plt.subplots(figsize=(6.4, 3.0))
+for k, sec in enumerate(['Public', 'Private']):
+    ys = [t3b.loc[sec, f'Started within {t} yr (%)'] for t in xs]
+    ax.plot(xs, ys, color=C[k], lw=2, marker='o', ms=6, markeredgecolor='white', markeredgewidth=1.5, label=sec)
+    last = [(x_, y_) for x_, y_ in zip(xs, ys) if pd.notna(y_)][-1]
+    ax.text(last[0] + 0.1, last[1], sec, color=INK2, fontsize=8, va='center')
+ax.set_xticks(xs); ax.set_xticklabels([f'{x} yr' for x in xs]); ax.set_ylim(0, 100); ax.set_xlim(0.8, 5.7)
+ax.set_ylabel('% of permitted schemes started'); ax.set_xlabel('Time since permission granted')
+ax.legend(loc='upper left', fontsize=8)
+save(fig, 'c10_started_by_sector')
 
 # C8 build rates by band
 t9 = T['9 Build rates'].set_index('Group')

@@ -44,7 +44,9 @@ R.title = 'README'
 lines = [
     ('Limerick residential delivery study – data companion', None),
     ('', None),
-    ('Scheme', 'A counted residential application from the Limerick pipeline workbook (after primacy rules). 254 schemes; 237 with permission.'),
+    ('Scheme', 'A counted residential application from the Limerick pipeline workbook (after primacy rules), plus residential Part 8 schemes in the planning register that CIS does not hold (Source column).'),
+    ('Owner / sector', 'Public = Limerick City and County Council (incl. Part 8), approved housing bodies, Land Development Agency. From CIS grantee and promoter, building control local-authority and AHB flags, and Part 8 file numbers (yy/8nnn). Turnkey purchases not identified in these sources are classed as private.'),
+    ('City neighbourhood', 'Nine neighbourhoods defined by Limerick City and County Council from 42 Electoral Divisions (King\u2019s Island, code 1a, shown separately). Schemes outside them are labelled Outside city neighbourhoods.'),
     ('Planning dates', 'National Planning Applications dataset (Department of Housing, Local Government and Heritage), Limerick County Council records, queried 29/09/2026. An Coimisiún Pleanála case pages for SHD. CIS dates for Part 8 schemes.'),
     ('Start on site', 'Earliest commencement date on a building control commencement notice (National Building Control Office open data, 2014–present) matched by planning reference, including extensions of duration and appeal references. CIS start date used only where no notice matched and CIS records the scheme on site or complete.'),
     ('Completion', 'CIS. Date of the first dated CIS update recording the scheme as complete; CIS finish date where no such update exists. Completion certificates were tested but record 328 of the 1,226 units CIS reports complete on the same schemes, so they are not used for completions.'),
@@ -67,9 +69,9 @@ R.column_dimensions['B'].width = 120
 
 # ---------- Schemes ----------
 S = wb.create_sheet('Schemes')
-cols = [('ref', 'Planning ref'), ('site', 'Site ID'), ('heading', 'Scheme'), ('settlement', 'Settlement'), ('lea', 'LEA'),
+cols = [('ref', 'Planning ref'), ('register_ref', 'Register ref'), ('source', 'Source'), ('site', 'Site ID'), ('heading', 'Scheme'), ('settlement', 'Settlement'), ('lea', 'LEA'), ('nbhd', 'City neighbourhood'),
         ('lat', 'Latitude'), ('lon', 'Longitude'), ('units', 'Units'), ('band', 'Size band'), ('dwelling_type', 'Type'),
-        ('route', 'Route'), ('promoter', 'Promoter'), ('stage', 'CIS stage'), ('status', 'Status'), ('received', 'Application received'),
+        ('route', 'Route'), ('owner', 'Owner'), ('sector', 'Sector'), ('stage', 'CIS stage'), ('status', 'Status'), ('received', 'Application received'),
         ('final_grant', 'Permission granted'), ('fi', 'Further information'), ('appealed', 'Appealed'), ('expiry', 'Expiry'),
         ('start', 'Start on site'), ('start_source', 'Start source'), ('bc_notices', 'Commencement notices'),
         ('bc_units_commenced', 'Units on notices'), ('completion', 'Completion (CIS)'), ('ccc_count', 'Completion certificates'),
@@ -77,6 +79,7 @@ cols = [('ref', 'Planning ref'), ('site', 'Site ID'), ('heading', 'Scheme'), ('s
         ('start_to_complete_yrs', 'Build period (yrs)'), ('build_rate_dpa', 'Build rate (dpa)'), ('relationship', 'Relationship'),
         ('rel_conf', 'Relationship confidence'), ('barriers_noted', 'CIS notes on barriers')]
 Dx = D.copy()
+Dx['sector'] = np.where(Dx.owner.str.startswith('Public'), 'Public', 'Private')
 Dx['status'] = Dx.status.replace({'Stalled (CIS)': 'Not started – permission live'})
 Dx.loc[(D.status == 'Stalled (CIS)') & D.start.notna(), 'status'] = 'Under construction'
 Dx = Dx.sort_values(['lea', 'units'], ascending=[True, False])
@@ -123,7 +126,16 @@ stl = lambda s: (lambda i, s=s: f'=SUMIFS({rng("Units")},{rng("LEA")},$A{i},{rng
 end2 = live_table(W, end + 3, 'Units with permission by status and LEA', 'LEA', LEAO,
                   [('Schemes', lambda i: f'=COUNTIFS({rng("LEA")},$A{i},{rng("Status")},"<>In planning")')] +
                   [(s, stl(s)) for s in STATUS4] + [('Total units', lambda i: f'=SUM(C{i}:F{i})')])
-W.column_dimensions['A'].width = 24
+NBO = ['City Centre', 'Kings Island', 'Corbally/Grove Island', 'Singland/Garryowen', 'Castletroy/Annacotty', 'Southhill', 'Dooradoyle', 'Ballinacurra', 'Caherdavin', 'Outside city neighbourhoods']
+stn = lambda s_: (lambda i, s_=s_: f'=SUMIFS({rng("Units")},{rng("City neighbourhood")},$A{i},{rng("Status")},"{s_}")')
+end3 = live_table(W, end2 + 2, 'Units with permission by status and city neighbourhood', 'Neighbourhood', NBO,
+                  [('Schemes', lambda i: f'=COUNTIFS({rng("City neighbourhood")},$A{i},{rng("Status")},"<>In planning")')] +
+                  [(s_, stn(s_)) for s_ in STATUS4] + [('Total units', lambda i: f'=SUM(C{i}:F{i})')])
+sts = lambda s_: (lambda i, s_=s_: f'=SUMIFS({rng("Units")},{rng("Sector")},$A{i},{rng("Status")},"{s_}")')
+live_table(W, end3 + 2, 'Units with permission by status and sector', 'Sector', ['Public', 'Private'],
+           [('Schemes', lambda i: f'=COUNTIFS({rng("Sector")},$A{i},{rng("Status")},"<>In planning")')] +
+           [(s_, sts(s_)) for s_ in STATUS4] + [('Total units', lambda i: f'=SUM(C{i}:F{i})')])
+W.column_dimensions['A'].width = 28
 for j in range(2, 8):
     W.column_dimensions[L(j)].width = 16
 

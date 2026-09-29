@@ -283,6 +283,23 @@ for _, r in extra.iterrows():
     ))
 D = pd.DataFrame(rows)
 
+# ---------- Department social housing construction report (vetted matches only) ----------
+import os
+if os.path.exists('shcp_feed.pkl'):
+    SH = pd.read_pickle('shcp_feed.pkl').set_index('pid')
+    for c in ['sh_no', 'sh_programme', 'sh_ahb', 'sh_stage', 'sh_quarter', 'sh_mode', 'completion_source']:
+        D[c] = ''
+    D['completion_source'] = np.where(D.completion.notna(), 'CIS', '')
+    for i, r in D[D.pid.isin(SH.index)].iterrows():
+        h = SH.loc[r.pid]
+        D.at[i, 'sh_no'] = str(h.no); D.at[i, 'sh_programme'] = h.programme; D.at[i, 'sh_ahb'] = '' if pd.isna(h.ahb) else h.ahb
+        D.at[i, 'sh_stage'] = h.stage; D.at[i, 'sh_quarter'] = h.stage_quarter; D.at[i, 'sh_mode'] = h.sh_mode
+        D.at[i, 'owner'] = h.sh_owner
+        if h.stage == 'Completed' and r.stage != 'Complete':
+            D.at[i, 'stage'] = 'Complete'; D.at[i, 'completion'] = h.q_mid; D.at[i, 'completion_source'] = 'Department social housing report'
+        elif h.stage == 'On Site' and pd.isna(r.start) and r.stage not in ('On Site', 'Part Complete', 'Complete'):
+            D.at[i, 'stage'] = 'On Site'; D.at[i, 'start_source'] = 'Department social housing report (on site by ' + h.stage_quarter + ')'
+
 # size bands
 BANDS = [(1, 9, '1–9'), (10, 24, '10–24'), (25, 49, '25–49'), (50, 99, '50–99'), (100, 10 ** 6, '100+')]
 def band(u):

@@ -77,7 +77,9 @@ cols = [('ref', 'Planning ref'), ('register_ref', 'Register ref'), ('source', 'S
         ('bc_units_commenced', 'Units on notices'), ('completion', 'Completion (CIS)'), ('ccc_count', 'Completion certificates'),
         ('ccc_units', 'Units on certificates'), ('approval_yrs', 'Approval (yrs)'), ('grant_to_start_yrs', 'Grant to start (yrs)'),
         ('start_to_complete_yrs', 'Build period (yrs)'), ('build_rate_dpa', 'Build rate (dpa)'), ('relationship', 'Relationship'),
-        ('rel_conf', 'Relationship confidence'), ('barriers_noted', 'CIS notes on barriers')]
+        ('rel_conf', 'Relationship confidence'), ('barriers_noted', 'CIS notes on barriers'),
+        ('completion_source', 'Completion source'), ('sh_no', 'Social housing project no.'), ('sh_programme', 'Social housing programme'),
+        ('sh_stage', 'Social housing stage'), ('sh_quarter', 'Social housing stage quarter'), ('sh_mode', 'Public delivery mode')]
 Dx = D.copy()
 Dx['sector'] = np.where(Dx.owner.str.startswith('Public'), 'Public', 'Private')
 Dx['status'] = Dx.status.replace({'Stalled (CIS)': 'Not started – permission live'})

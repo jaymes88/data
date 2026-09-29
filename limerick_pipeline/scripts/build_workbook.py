@@ -270,6 +270,13 @@ for _, r in A.iterrows():
 M = pd.DataFrame(mix_rows)
 A = pd.concat([A, M], axis=1)
 
+import os
+SHF = {}
+if os.path.exists('shcp_feed.pkl'):
+    _f = pd.read_pickle('shcp_feed.pkl')
+    SHF = {int(k): {kk: (None if (isinstance(vv, float) and np.isnan(vv)) else vv) for kk, vv in v.items()}
+           for k, v in _f.set_index('pid').to_dict('index').items() if str(k).isdigit()}
+
 # =============================== WORKBOOK ===============================
 wb = Workbook()
 F = 'Arial'
@@ -354,6 +361,7 @@ notes = [
     ('Register unit counts', 'NumResidentialUnits is blank or zero on many register records.'),
     ('Automatic relationships', 'Rules read the text of descriptions. They cannot see drawings, so phase boundaries and repeat applications on different parts of a large landholding can be misread. Check Low and Medium confidence rows.'),
     ('Legal position', 'Screening only. It does not confirm the legal status of any permission.'),
+    ('Social housing report', 'Social Housing Construction Projects Status Report Q1 2026 (Department of Housing, Limerick pages). The report has no planning references or coordinates; only schemes matched with confidence on name, address and units (and consistent dates) are shown in the Social Housing columns. Unmatched and uncertain rows are omitted.'),
     ('Contacts', 'CIS project team names and emails are not carried into this file.'),
 ]
 r0 = 10
@@ -386,6 +394,8 @@ groups = [
              'Register Outcome', 'Register Decision Date', 'Register Expiry', 'Extension of Duration',
              'Expiry incl. EoD', 'Register Units', 'Location Diff (m)', 'Later Application Nearby',
              'Register Description', 'Register Link', 'Decision Date Diff (days)', 'Units Check', 'Check Result']),
+    (PatternFill('solid', fgColor='843C0C'), ['Social Housing Project No.', 'Social Housing Programme', 'Social Housing AHB',
+             'Social Housing Stage', 'Social Housing Stage Quarter', 'Public Delivery']),
 ]
 acols, afill = [], {}
 for fill, cols in groups:
@@ -412,6 +422,10 @@ for i, idx in enumerate(order, start=2):
         'Student Bedspaces': r['Student Bedspaces'], 'Auto Relationship': r.rel, 'Related Ref': r.rel_ref,
         'Relationship Basis': r.rel_basis, 'Confidence': r.rel_conf, 'Units Completed (stated)': r.done,
         'Mix Source': r.src, 'Houses': r.houses, 'Apartments': r.apts, 'Type Unknown': r.unk, 'Mix Note': r.note,
+        'Social Housing Project No.': SHF.get(r['Project Id'], {}).get('no'), 'Social Housing Programme': SHF.get(r['Project Id'], {}).get('programme'),
+        'Social Housing AHB': SHF.get(r['Project Id'], {}).get('ahb'), 'Social Housing Stage': SHF.get(r['Project Id'], {}).get('stage'),
+        'Social Housing Stage Quarter': SHF.get(r['Project Id'], {}).get('stage_quarter'),
+        'Public Delivery': (SHF[r['Project Id']]['sh_owner'].replace('Public – ', '').capitalize() + ' (' + SHF[r['Project Id']]['sh_mode'].lower() + ')') if r['Project Id'] in SHF else None,
         'Register Source': r.found, 'Register Ref': r.reg_ref, 'Register Status': r.status, 'Register Decision': r.decision,
         'Appeal Decision': r.appeal, 'Register Outcome': r.outcome, 'Register Decision Date': r.reg_dec,
         'Register Expiry': r.reg_exp, 'Extension of Duration': r.eod, 'Expiry incl. EoD': r.exp_final,

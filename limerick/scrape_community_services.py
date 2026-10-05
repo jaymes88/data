@@ -54,8 +54,8 @@ def detail(path):
     return {
         "name": clean(title.group(1)) if title else "",
         "category": cat.group(1) if cat else "",
-        "address": field(t, "address"),
-        "region": field(t, "region"),
+        "address": re.sub(r"(,\s*)+", ", ", field(t, "address")).strip(" ,"),
+        "region": field(t, "region").split(",")[0].strip(),
         "telephone": field(t, "telephone"),
         "latitude": lat.group(1) if lat else "",
         "longitude": lng.group(1) if lng else "",

@@ -25,6 +25,8 @@ from sources import kpmg_records, pbsa_beds, SOURCE as KPMG_SOURCE
 _k = kpmg_records(full.columns)
 _k['Reference'] = _k['Reference'].astype(str)
 full = pd.concat([full, _k], ignore_index=True)
+from sources import fix_coords
+full = fix_coords(full)
 ex = x['Existing Site Pipeline'].copy()
 lowconf_sites = set(x['Existing Site Review']['Site Group ID'])
 reg = pd.read_pickle('reg.pkl')
@@ -125,13 +127,13 @@ for _, a in full.iterrows():
             rec['eod'] = f"{e.ref}: {outcome(e)}" + (f", expires {e.ExpiryDate:%d/%m/%Y}" if pd.notna(e.ExpiryDate) else '')
             if outcome(e) in ('Granted', 'Granted on appeal') and pd.notna(e.ExpiryDate):
                 rec['exp_final'] = e.ExpiryDate
-        if o in ('Refused', 'Refused on appeal', 'Withdrawn', 'Invalid'):
+        if o in ('Refused', 'Refused on appeal', 'Withdrawn', 'Invalid', 'Quashed'):
             rec['later'] = later_nearby(a.Latitude, a.Longitude, r.ReceivedDate, ref)
     elif ref.startswith('ABPREF') and ref[6:] in abp:
         b = abp[ref[6:]]
         signed = pd.to_datetime(b['signed'], dayfirst=True)
         yrs = 10 if 'ten year' in b['desc'].lower() else 5
-        o = 'Granted' if 'grant' in b['decision'].lower() else ('Refused' if 'refus' in b['decision'].lower() else 'Pending')
+        o = 'Quashed' if 'quash' in b.get('history', '').lower() else ('Granted' if 'grant' in b['decision'].lower() else ('Refused' if 'refus' in b['decision'].lower() else 'Pending'))
         m = re.search(r'(\d+)\s*no\.?\s*(?:residential units|Build to Rent apartments)', b['desc'])
         rec.update(found='An Coimisiún Pleanála', reg_ref='ABP-' + ref[6:], decision=b['decision'], outcome=o,
                    reg_dec=signed, reg_exp=signed + pd.DateOffset(years=yrs) - pd.Timedelta(days=1),
@@ -492,7 +494,7 @@ for i, idx in enumerate(order, start=2):
     AW[c('Units Check')] = f'=IF(OR(N({c("Register Units")})=0,{u}=""),"Not recorded",IF({c("Register Units")}={u},"Match","Differs"))'
     o = c('Register Outcome')
     built = f'OR({st}="Complete",{st}="On Site",{st}="Part Complete")'
-    dead = f'OR({o}="Refused",{o}="Refused on appeal",{o}="Withdrawn",{o}="Invalid")'
+    dead = f'OR({o}="Refused",{o}="Refused on appeal",{o}="Withdrawn",{o}="Invalid",{o}="Quashed")'
     AW[c('Check Result')] = (
         f'=IF({c("Included in Pipeline")}="No","Excluded (non-residential)",IF({o}="No reference","Unverified – no reference",'
         f'IF({o}="Not in council register","Unverified – not in register (Part 8 / other)",'

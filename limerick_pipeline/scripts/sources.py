@@ -63,9 +63,9 @@ def kpmg_records(columns):
 def load_full(path='lp.xlsx', **kw):
     full = pd.read_excel(path, sheet_name='Full Project Pipeline', **kw)
     extra = kpmg_records(full.columns)
-    if 'dtype' in kw and kw['dtype'].get('Reference') is str:
-        extra['Reference'] = extra['Reference'].astype(str)
-    return pd.concat([full, extra], ignore_index=True)
+    full = pd.concat([full, extra], ignore_index=True)
+    full['Reference'] = full['Reference'].map(lambda v: None if pd.isna(v) else str(v).replace('.0', '') if isinstance(v, float) else str(v))
+    return fix_coords(full)
 
 
 def pbsa():
@@ -83,3 +83,32 @@ def pbsa_beds():
     if P.empty:
         return {}
     return {r: int(b) for refs, b, ex in zip(P.refs, P.beds, P.existing) if ex == 'no' for r in refs[:1]}
+
+
+def fix_coords(full):
+    """Best location per record: planning register point (council's own; SHDs via their council copy yy+case no.),
+    then the KPMG audit site boundary, then the CIS coordinate. Adds a 'Location Source' column."""
+    full = full.copy()
+    reg = pd.read_pickle('reg.pkl')
+    reg['ref'] = reg.ApplicationNumber.astype(str).str.strip()
+    reg = reg.dropna(subset=['lat', 'lon']).drop_duplicates('ref')
+    pts = dict(zip(reg.ref, zip(reg.lat, reg.lon)))
+    shd = {r[-6:]: pts[r] for r in pts if len(r) == 8 and r[-6:].startswith('3')}
+    kp = {}
+    if os.path.exists(KPMG_SHP):
+        K = _read_shp(KPMG_SHP)
+        kp = dict(zip(K['Project Id'].astype('int64'), zip(K['_lat'], K['_lon'])))
+    src = []
+    for i, r in full.iterrows():
+        ref = str(r.get('Reference') or '').strip()
+        p = pts.get(ref) or (shd.get(ref[6:]) if ref.startswith('ABPREF') else None)
+        s_ = 'Planning register'
+        if p is None and pd.notna(r['Project Id']) and int(r['Project Id']) in kp:
+            p, s_ = kp[int(r['Project Id'])], 'KPMG audit site boundary'
+        if p is None:
+            s_ = 'CIS' if pd.notna(r['Latitude']) else 'None'
+        else:
+            full.at[i, 'Latitude'], full.at[i, 'Longitude'] = p
+        src.append(s_)
+    full['Location Source'] = src
+    return full

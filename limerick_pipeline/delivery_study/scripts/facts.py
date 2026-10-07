@@ -37,6 +37,11 @@ f['nw_started']=n(L.loc['Newcastle West','Units started']); f['nw_units']=n(L.lo
 rt=T['4d Implementation by route'].set_index('route')
 f['shd_units']=n(rt.loc['SHD (An Bord Pleanála)','Units permitted']); f['shd_started']=n(rt.loc['SHD (An Bord Pleanála)','Schemes started']); f['shd_pct']=pc(rt.loc['SHD (An Bord Pleanála)','Units started (%)'])
 f['shd_started_word']={1:'One',2:'Two',3:'Three',4:'Four',5:'Five',6:'All'}.get(int(rt.loc['SHD (An Bord Pleanála)','Schemes started']),'')
+_shd=P[P.route.str.startswith('SHD')&P.status4.str.startswith('Not started')].sort_values('units',ascending=False)
+_nm=lambda h: h.split(' - ',1)[-1].replace(' Housing Development','').replace('Residential Development, ','').replace(', Limerick','').strip()
+_items=[f"{_nm(r.heading)} ({int(r.units)} units{', now past expiry' if r.status4.endswith('past expiry') else ''})" for _,r in _shd.iterrows()]
+f['shd_ns_list']=(', '.join(_items[:-1])+' and '+_items[-1]) if len(_items)>1 else (_items[0] if _items else 'none')
+f['shd_n']=n((P.route.str.startswith('SHD')).sum()); f['shd_ns_n']=n(len(_items))
 f['std_pct']=pc(rt.loc['Standard planning application','Units started (%)'])
 f['p8_pct']=pc(rt.loc['Part 8 / council','Units started (%)']); f['p8_coh']=n(rt.loc['Part 8 / council','Schemes'])
 f['p8_total']=n((D.route=='Part 8 / council').sum()); f['p8_added']=n((D.source!='CIS').sum()); f['p8_added_units']=n(D.loc[D.source!='CIS','units'].sum())

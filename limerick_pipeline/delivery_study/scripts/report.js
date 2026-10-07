@@ -181,7 +181,7 @@ const s6 = [
   table(T.route, split(6, 2600)),
   caption('Permissions at least two years old.'),
   spacer(),
-  p(`Standard planning applications and Part 8 schemes start at similar rates by units (${F.std_pct} and ${F.p8_pct}). ${F.shd_started_word} of the six SHD permissions have started, accounting for ${F.shd_pct} of their ${F.shd_units} units. The three not started are Clonmacken Gardens (165 units), Annacotty (137 units, now past expiry, with a fresh application for the site lodged) and Punches Cross student accommodation (30 units).`),
+  p(`Standard planning applications and Part 8 schemes start at similar rates by units (${F.std_pct} and ${F.p8_pct}). ${F.shd_started_word} of the ${F.shd_n} live SHD permissions have started, accounting for ${F.shd_pct} of their ${F.shd_units} units. Not yet started: ${F.shd_ns_list}. A sixth SHD, Punches Cross student accommodation, was quashed by the High Court in December 2023 and is excluded.`),
   table(T.type, split(6, 2600)),
   caption('Permissions at least two years old. Type from bedroom mix or development description.'),
   spacer(),

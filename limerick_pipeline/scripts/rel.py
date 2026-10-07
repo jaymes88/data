@@ -6,7 +6,7 @@ EOD = re.compile(r'extension of (?:permission|duration|the (?:appropriate )?peri
 OUTL = re.compile(r'outline permission', re.I)
 REF = re.compile(r'(?<![\d/])(\d{2})\s*/\s*(\d{1,6})(?![\d/])')
 ABP = re.compile(r'ABP[-\s]?(\d{6})', re.I)
-DEAD = {'Refused', 'Refused on appeal', 'Withdrawn', 'Invalid'}
+DEAD = {'Refused', 'Refused on appeal', 'Withdrawn', 'Invalid', 'Quashed'}
 BUILT = {'Complete', 'On Site', 'Part Complete'}
 
 def refs_in(desc):

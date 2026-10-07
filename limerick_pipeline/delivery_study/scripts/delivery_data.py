@@ -34,6 +34,9 @@ def bc_refs(s):
         out.add('ABPREF' + n)
     for n in re.findall(r'PL\s*\d{2}\s*\.?\s*(\d{6})', s, re.I):
         out.add('ABPREF' + n)
+    # An Bord Pleanála case numbers written without 'ABP': 22-313124, 313124-22, 22/313124
+    for n in re.findall(r'(?<!\d)(?:\d{2}\s*[-/]\s*)?(3\d{5})(?:\s*[-/]\s*\d{2})?(?!\d)', s):
+        out.add('ABPREF' + n)
     return out
 
 bc['refs'] = bc.CN_Planning_Permission_Number.map(bc_refs)

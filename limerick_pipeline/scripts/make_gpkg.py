@@ -28,12 +28,16 @@ keep = ['pid', 'ref', 'register_ref', 'source', 'site', 'heading', 'settlement',
         'expiry', 'start', 'start_source', 'completion', 'completion_source', 'approval_yrs', 'grant_to_start_yrs',
         'start_to_complete_yrs', 'build_rate_dpa', 'bc_notices', 'ccc_count', 'ccc_units', 'sh_no', 'sh_programme', 'sh_stage',
         'sh_quarter', 'sh_mode', 'barriers_noted', 'lat', 'lon']
+_apps = pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx', sheet_name='Applications')
+D['student_bedspaces'] = D.pid.map(dict(zip(_apps['Project Id'].astype(str), _apps['Student Bedspaces']))) if False else D.pid.astype(str).map(dict(zip(_apps['Project Id'].astype(str), _apps['Student Bedspaces'])))
+keep.insert(keep.index('dwelling_type') + 1, 'student_bedspaces')
 g1 = points(D[[c for c in keep if c in D.columns]])
 g1.to_file(OUT, layer='schemes', driver='GPKG')
 
 # 2. all applications from the pipeline workbook, located from CIS / register
 A = pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx', sheet_name='Applications')
-full = pd.read_excel('lp.xlsx', sheet_name='Full Project Pipeline')[['Project Id', 'Latitude', 'Longitude']]
+from sources import load_full, _read_shp, KPMG_SHP
+full = load_full('lp.xlsx')[['Project Id', 'Latitude', 'Longitude']]
 A = A.merge(full, on='Project Id', how='left').rename(columns={'Latitude': 'lat', 'Longitude': 'lon'})
 acols = ['Project Id', 'Site ID', 'CIS Reference', 'Project Heading', 'Address', 'Settlement', 'CIS Stage', 'Application Date',
          'CIS Decision Date', 'Units', 'Dwelling Type', 'Final Relationship', 'Related Ref', 'Confidence', 'Counts?', 'Reporting Tier',
@@ -66,6 +70,15 @@ polys('nbh_eds.geojson', 'city_neighbourhood_eds')
 lea = polys('lea.geojson', 'local_electoral_areas')
 L = pd.read_pickle('lda_sites.pkl')
 ld = polys('lda_sites.geojson', 'lda_public_land')
+
+# Clare schemes in the KPMG audit (Limerick metropolitan area, outside Limerick's planning authority – not in study totals)
+K = _read_shp(KPMG_SHP)
+K = K[K['Planning A'].astype(str).str.contains('Clare')]
+kc = gpd.GeoDataFrame(pd.DataFrame({'project_id': K['Project Id'].astype('int64'), 'reference': K['Reference'], 'scheme': K['Project He'],
+                                    'address': K['Project Si'], 'stage': K['Detailed s'], 'units': K['Units'], 'planning_authority': K['Planning A'],
+                                    'note': 'Clare County Council area – outside the Limerick study totals'}),
+                      geometry=list(K['_geom_itm']), crs=2157)
+kc.to_file(OUT, layer='clare_metro_schemes', driver='GPKG')
 
 import pyogrio
 for l in pyogrio.list_layers(OUT):

@@ -80,6 +80,8 @@ def classify(A):
             r = rrefs[0]; e = A.loc[byref[r]]
             if OUTL.search(desc) and e.regtype == 'OUTLINE PERMISSION' or re.search(r'outline permission[^.]{0,80}' + r[:2] + r'\s*/\s*' + r[2:], desc, re.I):
                 res[i] = ('Replaces earlier', r, f'Permission consequent on outline {r}', 'High'); superseded[byref[r]] = a.ref; continue
+            if a.outcome in ('Pending', 'Under appeal') and e.outcome in ('Granted', 'Granted on appeal', 'Not in council register', 'No reference'):
+                res[i] = ('Amendment within parent', r, f'Pending application relating to granted {r}; {r} counted until this is decided', 'Medium'); continue
             if MOD.search(desc):
                 au, eu = best_units(a), best_units(e)
                 if e.stage == 'Complete':
@@ -106,6 +108,9 @@ def classify(A):
             if (s >= 0.85 and ucompat) or (ueq and s >= 0.5):
                 if best is None or s > best[1]:
                     best = (j, s, ueq)
+        if best and a.outcome in ('Pending', 'Under appeal') and A.loc[best[0]].outcome in ('Granted', 'Granted on appeal'):
+            e = A.loc[best[0]]
+            res[i] = ('Amendment within parent', e.ref, f'Pending re-application on granted {e.ref}; {e.ref} counted until this is decided', 'Medium'); continue
         if best:
             j, s, ueq = best; e = A.loc[j]
             if e.stage == 'Complete' and s < 0.95:

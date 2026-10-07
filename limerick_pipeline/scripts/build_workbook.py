@@ -21,6 +21,10 @@ OUT = 'Limerick_Residential_Pipeline_Simplified.xlsx'
 
 x = pd.read_excel('lp.xlsx', sheet_name=None, dtype={'Reference': str})
 full = x['Full Project Pipeline'].copy()
+from sources import kpmg_records, pbsa_beds, SOURCE as KPMG_SOURCE
+_k = kpmg_records(full.columns)
+_k['Reference'] = _k['Reference'].astype(str)
+full = pd.concat([full, _k], ignore_index=True)
 ex = x['Existing Site Pipeline'].copy()
 lowconf_sites = set(x['Existing Site Review']['Site Group ID'])
 reg = pd.read_pickle('reg.pkl')
@@ -147,7 +151,7 @@ for _, s in ex.iterrows():
     for p in str(s['Related Project IDs']).split(','):
         pid2site[int(p)] = s['Site Group ID']
 granted = A[A['Source Dataset'].str.startswith('Granted')]
-up = A[A['Source Dataset'].str.startswith('Latest')]
+up = A[~A['Source Dataset'].str.startswith('Granted')]
 
 SETTLE = ['Mungret', 'Annacotty', 'Patrickswell', 'Newcastle West', 'Kilmallock', 'Adare', 'Bruff', 'Cappamore',
           'Rathkeale', 'Castleconnel', 'Caherconlish', 'Abbeyfeale']
@@ -221,6 +225,23 @@ rel = classify(D)
 for k, n in enumerate(['rel', 'rel_ref', 'rel_basis', 'rel_conf']):
     A[n] = [rel[i][k] for i in A.index]
 A['rel_ref'] = A.rel_ref.str.replace('^PID', 'Project ', regex=True)
+
+# CIS sometimes holds one Part 8 twice: under its own project number and under the council file number (yy/8nnn)
+_lab = A[A.ref.str.contains(r'part\s*8|PT8', case=False, na=False) & (A.found != 'Council register') & A.rel.isin(['Primary', 'Additional application on site', 'Additional phase'])]
+_r8 = A[A.ref.str.fullmatch(r'\d{2}8\d{3}', na=False) & ~A.rel.isin(['Not live', 'Superseded', 'Excluded', 'Duplicate'])]
+for i, a in _lab.iterrows():
+    if pd.isna(a.Latitude) or pd.isna(a.Units):
+        continue
+    d = np.sqrt(((_r8.Latitude - a.Latitude) * 111000) ** 2 + ((_r8.Longitude - a.Longitude) * 67000) ** 2)
+    ok = (d < 100) & ((_r8.Units - a.Units).abs() <= 0.1 * a.Units)
+    if ok.any():
+        j = d[ok].idxmin()
+        A.loc[i, ['rel', 'rel_ref', 'rel_basis', 'rel_conf']] = ['Duplicate', _r8.loc[j, 'ref'],
+            f"Same Part 8 recorded by CIS under its project number and council file {_r8.loc[j, 'ref']} ({int(d[j])}m, same units)", 'High']
+
+# bedspaces for granted student schemes from the PBSA file
+_beds = pbsa_beds()
+A['Student Bedspaces'] = [_beds.get(r, b) for r, b in zip(A.ref, A['Student Bedspaces'])]
 
 
 # ---------------- dwelling type and bedroom mix ----------------
@@ -612,19 +633,27 @@ RQ.row_dimensions[1].height = 30
 # ---------------- Register Not in CIS ----------------
 abpnums = {r[6:] for r in CISREFS if r.startswith('ABPREF')}
 cand = reg[reg.ApplicationType.isin(['PERMISSION', 'OUTLINE PERMISSION', 'PERMISSION CONSEQUENT'])
-           & (reg.NumResidentialUnits.fillna(0) >= 10) & (~reg.ref.isin(CISREFS)) & (~reg.ref.str[2:].isin(abpnums))].copy()
+           & (np.maximum(reg.NumResidentialUnits.fillna(0), reg.DevelopmentDescription.map(lambda t: desc_units(t) or 0)) >= 10) & (~reg.ref.isin(CISREFS)) & (~reg.ref.str[2:].isin(abpnums))].copy()
 cand['out'] = cand.apply(outcome, axis=1)
 cand = cand[cand.out.isin(['Pending', 'Under appeal']) |
             (cand.out.isin(['Granted', 'Granted on appeal']) & (cand.ExpiryDate >= REPORT_DATE))]
+cand['units_best'] = np.maximum(cand.NumResidentialUnits.fillna(0), cand.DevelopmentDescription.map(lambda t: desc_units(t) or 0)).astype(int)
+# Part 8 files held by CIS under a CIS project number (matched by location in the study) are not missing
+_p8lab = A[A.ref.str.contains(r'part\s*8|PT8', case=False, na=False)][['Latitude', 'Longitude']].dropna()
+_isp8 = cand.ref.str.fullmatch(r'\d{2}8\d{3}')
+_nearlab = [bool(len(_p8lab)) and bool((dist(_p8lab.Latitude, _p8lab.Longitude, la, lo) < 60).any()) if pd.notna(la) else False for la, lo in zip(cand.lat, cand.lon)]
+cand = cand[~_isp8]  # Part 8s are reconciled in the delivery study
+_mod = cand.DevelopmentDescription.fillna('').str.strip().str.lower().str.match(r'(?:the )?(?:minor )?(?:modification|modifying|alteration|amendment|revision|change of house type)')
+cand = cand[~_mod]  # amendments to permissions already tracked are not new schemes
 siteref = A[A.site != ''][['site', 'Latitude', 'Longitude']].dropna()
 NW = wb.create_sheet('Register Not in CIS')
 ncols = ['Register Ref', 'Received', 'Outcome', 'Residential Units', 'Expiry', 'Address', 'Description',
          'Nearest CIS Site', 'Distance (m)', 'Register Link', 'Analyst Note']
 header(NW, 1, ncols, GFILL)
-for i, (_, r) in enumerate(cand.sort_values('NumResidentialUnits', ascending=False).iterrows(), start=2):
+for i, (_, r) in enumerate(cand.sort_values('units_best', ascending=False).iterrows(), start=2):
     dd = dist(siteref.Latitude, siteref.Longitude, r.lat, r.lon)
     j = dd.idxmin()
-    row = [r.ref, r.ReceivedDate, r.out, int(r.NumResidentialUnits), r.ExpiryDate, r.DevelopmentAddress,
+    row = [r.ref, r.ReceivedDate, r.out, int(r.units_best), r.ExpiryDate, r.DevelopmentAddress,
            str(r.DevelopmentDescription)[:300], siteref.loc[j, 'site'], int(dd[j]), r.LinkAppDetails]
     for k, v in enumerate(row, 1):
         NW.cell(row=i, column=k, value=nz(v))

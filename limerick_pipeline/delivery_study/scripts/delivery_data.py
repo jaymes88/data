@@ -12,7 +12,8 @@ REPORT_DATE = pd.Timestamp('2026-09-29')
 WB = 'Limerick_Residential_Pipeline_Simplified.xlsx'
 
 app = pd.read_excel(WB, sheet_name='Applications', dtype={'CIS Reference': str, 'Register Ref': str, 'Related Ref': str})
-full = pd.read_excel('lp.xlsx', sheet_name='Full Project Pipeline')
+from sources import load_full
+full = load_full('lp.xlsx')
 reg = pd.read_pickle('reg.pkl')
 reg['ref'] = reg.ApplicationNumber.astype(str).str.strip()
 REG = reg.drop_duplicates('ref').set_index('ref')
@@ -286,7 +287,12 @@ D = pd.DataFrame(rows)
 # ---------- Department social housing construction report (vetted matches only) ----------
 import os
 if os.path.exists('shcp_feed.pkl'):
-    SH = pd.read_pickle('shcp_feed.pkl').set_index('pid')
+    SH = pd.read_pickle('shcp_feed.pkl')
+    # social housing matches made against a CIS Part 8 record later marked as a duplicate move to the kept record
+    _dup = app[app['Final Relationship'] == 'Duplicate'].set_index('Project Id')['Related Ref'].to_dict()
+    _byref = dict(zip(D.ref, D.pid)) | dict(zip(D.register_ref, D.pid))
+    SH['pid'] = [_byref.get(str(_dup[p]), p) if p in _dup else p for p in SH.pid]
+    SH = SH.drop_duplicates('pid').set_index('pid')
     for c in ['sh_no', 'sh_programme', 'sh_ahb', 'sh_stage', 'sh_quarter', 'sh_mode', 'completion_source']:
         D[c] = ''
     D['completion_source'] = np.where(D.completion.notna(), 'CIS', '')

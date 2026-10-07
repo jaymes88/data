@@ -65,5 +65,8 @@ f['onhold']=n(b.loc['Schemes with CIS note: on hold / no movement','Schemes / ap
 f['ccc_units']=n(c.ccc_units.sum()); f['cis_units']=n(c.units.sum()); f['ccc_n']=n((c.ccc_count>0).sum())
 ce=ns[ns.lea=='Limerick City East']; f['ce_recent_share']=pc(100*ce[ce.final_grant>=pd.Timestamp('2025-01-01')].units.sum()/ce.units.sum())
 f['sh_n']=n((D.sh_no!='').sum()); f['sh_units']=n(D.loc[D.sh_no!='','units'].sum()); f['sh_turnkey']=n((D.sh_mode=='Turnkey').sum()); f['sh_completed']=n((D.completion_source=='Department social housing report').sum())
+_ap=pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx',sheet_name='Applications')
+_k=_ap[_ap['Source Dataset'].astype(str).str.startswith('KPMG')]; f['kpmg_n']=n(len(_k)); f['kpmg_u']=n(_k.Units.sum())
+_d=_ap[_ap['Final Relationship']=='Duplicate']; f['dup_n']=n(len(_d)); f['dup_u']=n(_d.Units.sum())
 json.dump(f,open('facts.json','w'),indent=1,ensure_ascii=False)
 for k,v in f.items(): print(k,'=',v)

@@ -74,5 +74,6 @@ f['sh_n']=n((D.sh_no!='').sum()); f['sh_units']=n(D.loc[D.sh_no!='','units'].sum
 _ap=pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx',sheet_name='Applications')
 _k=_ap[_ap['Source Dataset'].astype(str).str.startswith('KPMG')]; f['kpmg_n']=n(len(_k)); f['kpmg_u']=n(_k.Units.sum())
 _d=_ap[_ap['Final Relationship']=='Duplicate']; f['dup_n']=n(len(_d)); f['dup_u']=n(_d.Units.sum())
+_r=D[D.source.astype(str).str.startswith('Register only (private')]; f['regadd_n']=n(len(_r)); f['regadd_u']=n(_r.units.sum())
 json.dump(f,open('facts.json','w'),indent=1,ensure_ascii=False)
 for k,v in f.items(): print(k,'=',v)

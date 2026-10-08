@@ -52,10 +52,12 @@ S0 = S0.dissolve(by='rsca', aggfunc='first', as_index=False)
 sites = gpd.GeoDataFrame({
     'site_id': S0.rsca.astype(int).map(lambda v: f'CITY-{v}'),
     'rsca': S0.rsca.astype('Int64'), 'scope': 'City', 'neighbourhood': S0.nbhd9, 'local_name': S0.neighbourhood,
-    'register_status': S0.revised_status, 'landowner': S0.owner, 'zoning': S0.joined_Zoning.str.strip(),
+    'register_status': S0.revised_status, 'landowner': S0.owner.replace({'EOI': 'Unknown'}).fillna('Unknown'), 'zoning': S0.joined_Zoning.str.strip(),
     'site_type': S0.joined_Type.str.strip(), 'density_band': S0.joined_Densities, 'area_ha': S0.area_app.round(3),
     'capacity_units': S0.cap.round(0), 'reconcile_action': S0.Action,
 }, geometry=S0.geometry, crs=ITM)
+# council file marks one site (rsca 12, Moyross) 'EOI' with no owner: folded into Unknown
+sites.loc[S0.owner.eq('EOI').values, 'reconcile_action'] = 'Unchanged (council file landowner "EOI", owner not stated: shown as Unknown)'
 
 # sites the council's 04/12/25 review removed with no recorded reason, checked and still developable (initial audit fid -> why)
 REINSTATE = {56: 'Reinstated: removed in council review with no reason recorded; adjoining land built under 17/470, this remainder undeveloped',
@@ -68,7 +70,7 @@ if len(A0):
     sites = pd.concat([sites, gpd.GeoDataFrame({
         'site_id': A0.rsca.astype(int).map(lambda v: f'CITY-{v}'),
         'rsca': A0.rsca.astype('Int64'), 'scope': 'City', 'neighbourhood': A0.nbhd, 'local_name': A0.neighbourh,
-        'register_status': A0.revised_st, 'landowner': A0.Ownership, 'zoning': A0.joined_Zon.str.strip(),
+        'register_status': A0.revised_st, 'landowner': A0.Ownership.fillna('Unknown'), 'zoning': A0.joined_Zon.str.strip(),
         'site_type': A0.joined_Typ.str.strip(), 'density_band': A0.joined_Den, 'area_ha': A0.joined_A_1.round(3),
         'capacity_units': A0.joined_C_3.round(0), 'reconcile_action': A0.fid.map(REINSTATE),
     }, geometry=A0.geometry, crs=ITM)], ignore_index=True)

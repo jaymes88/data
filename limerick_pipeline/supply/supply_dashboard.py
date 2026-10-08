@@ -148,7 +148,7 @@ sites = R.merge(S[['site_id', 'rsca', 'density_band', 'reconcile_action']], on='
 sites = sites[['site_id', 'rsca', 'neighbourhood', 'local_name', 'landowner', 'zoning', 'site_type', 'register_status', 'area_ha', 'capacity_units',
                'complete_units', 'under_construction_units', 'permitted_not_started_units', 'consented_units', 'residual_capacity',
                'expired_not_started_units', 'in_planning_units', 'edge_match_units', 'permissions_on_site', 'flag', 'reconcile_action']]
-sites['landowner'] = sites.landowner.fillna('Unknown').replace({'EOI': 'EOI (expression of interest)'})
+sites['landowner'] = sites.landowner.fillna('Unknown')
 sites = sites.sort_values(['neighbourhood', 'rsca']).reset_index(drop=True)
 WS_S = wb.active
 WS_S.title = 'Sites'
@@ -329,7 +329,7 @@ r += 1
 hdr(D, r, ['Landowner', 'Sites', 'Area (ha)', 'Capacity', 'Complete', 'Under constr.', 'Permitted, not started', 'Consented', 'Residual'])
 r += 1
 t1 = r
-for o in ['Council', 'Private', 'EOI (expression of interest)', 'Unknown']:
+for o in ['Council', 'Private', 'Unknown']:
     put(D, r, 1, o, None)
     put(D, r, 2, f'=COUNTIFS({SR("landowner")},$A{r})')
     put(D, r, 3, f'=SUMIFS({SR("area_ha")},{SR("landowner")},$A{r})', '#,##0.0')

@@ -289,7 +289,7 @@ for c in 'BCDEFGHIJ':
     D.column_dimensions[c].width = 14
 D['A1'] = 'Limerick housing supply – audit land, consents and expected delivery'
 D['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
-D['A2'] = f'Council city sites audit (133 sites; county audit not yet supplied) and counted residential permissions. Planning status at {T0:%d/%m/%Y}.'
+D['A2'] = f'Council city sites audit ({len(sites)} sites; county audit not yet supplied) and counted residential permissions. Planning status at {T0:%d/%m/%Y}.'
 D['A2'].font = Font(name=F, size=9, italic=True)
 r = 4
 
@@ -591,7 +591,7 @@ N.column_dimensions['B'].width = 110
 N['A1'] = 'Method and assumptions'
 N['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
 text = [
-    ('Audit land', 'Council city sites audit (in_sca/sca.gpkg): sites drawn twice under one reference merged; rsca 2 and 112 reinstated (removed in the council’s 04/12/25 review with no reason recorded; checked as still developable). County audit not yet supplied.'),
+    ('Audit land', 'Council city sites audit (in_sca/sca.gpkg): sites drawn twice under one reference merged; rsca 2 and 112 reinstated (removed in the council’s 04/12/25 review with no reason recorded; checked as still developable); rsca 35 reinstated (removed because it already had Part 8 approval 19/8004, unlike the 28 permitted sites the council kept). County audit not yet supplied.'),
     ('Capacity', 'The council’s estimate per site (area × density band). Not a design-led figure. rsca 112 has a narrow, irregular shape, so its capacity is likely an upper figure.'),
     ('Permissions', 'Counted residential schemes from the pipeline tracker after primacy rules (no double counting of amendments, repeats or superseded applications), plus register-only Part 8s, KPMG additions and granted PBSA. PBSA counted in the units recorded for the scheme (cluster apartments); bedspaces are shown separately and are not added to unit totals.'),
     ('Location', 'Within site = scheme point inside an audit polygon. Edge = within 50 m of a site, not inside (point precision; check against the site boundary). City – outside audit land = more than 50 m from any audit site. County = outside the city audit area; cannot be assessed until the county audit is supplied. Scheme points come from the planning register where available.'),

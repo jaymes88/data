@@ -50,11 +50,12 @@ def allocate(r):
     u, p = r.units, par.get(r.size_band, par['Unknown'])
     if r.status == 'Complete':
         return out, None, None, 'Delivered', 'Complete (CIS)'
-    if r.status not in ('Under construction', 'Not started – permission live') or u <= 0:
+    student = r.tenure == 'Student (PBSA)' and 'student' in str(r.scheme).lower()   # pure PBSA: one block, finished together
+    if r.status not in ('Under construction', 'Not started – permission live') or (u <= 0 and not student):
         why = {'Stalled (CIS)': 'Stalled – not projected', 'Not started – past expiry': 'Permission expired – not projected',
                'In planning': 'Not yet decided – not projected'}.get(r.status, 'No units')
         return out, None, None, 'Not projected', why
-    dur = max(p['dur'], u / p['rate'])
+    dur = p['dur'] if student else max(p['dur'], u / p['rate'])
     if r.status == 'Under construction':
         s = yr(pd.Timestamp(r.start)) if pd.notna(r.start) else now
         conf, basis = 'High', 'On site: started ' + (str(r.start)[:7] if pd.notna(r.start) else 'date unknown')
@@ -70,6 +71,12 @@ def allocate(r):
             s, conf, basis = now + 0.75, 'Low', f'Permitted {str(r.final_grant)[:7]}, past typical start date with no commencement: start assumed in 9 months'
         if pd.notna(r.expiry) and yr(pd.Timestamp(r.expiry)) < s:
             conf, basis = 'Low', basis + '; expiry falls before assumed start'
+    if student:
+        end = max(s + dur, now + 0.5)
+        for y, (lo, hi) in zip(YEARS, YBOUND):
+            if lo <= end < hi:
+                out[y] = u
+        return out, round(s, 2), round(end, 2), conf, basis + '; student block completes in one go'
     first = s + min(1.0, dur / 2)               # first homes finish about a year after start (sooner on short builds)
     end = s + dur
     a = max(first, now)
@@ -148,15 +155,15 @@ WS_S.title = 'Sites'
 ns = sheet_table(WS_S, sites.rename(columns=lambda c: c.replace('_', ' ').capitalize()), [11, 6, 20, 18, 22, 11, 11, 26, 9, 10, 10, 11, 11, 11, 10, 10, 10, 10, 9, 34, 50])
 
 # Schemes sheet
-sc = A[['perm_id', 'planning_ref', 'scheme', 'neighbourhood', 'settlement', 'location', 'site_id', 'sector', 'tenure', 'route', 'status', 'stage', 'units',
+sc = A[['perm_id', 'planning_ref', 'scheme', 'neighbourhood', 'settlement', 'location', 'site_id', 'sector', 'tenure', 'route', 'status', 'stage', 'units', 'student_bedspaces',
         'final_grant', 'start', 'expiry', 'est_start_q', 'est_finish_q', 'confidence', 'basis', 'Complete units'] + YEARS + ['Not projected']].copy()
 sc = sc.rename(columns={'perm_id': 'Perm id', 'planning_ref': 'Planning ref', 'scheme': 'Scheme', 'neighbourhood': 'Neighbourhood', 'settlement': 'Settlement',
                         'location': 'Location', 'site_id': 'Site id', 'sector': 'Sector', 'tenure': 'Tenure', 'route': 'Route', 'status': 'Status', 'stage': 'CIS stage',
-                        'units': 'Units', 'final_grant': 'Final grant', 'start': 'Start on site', 'expiry': 'Expiry', 'est_start_q': 'Est. start',
+                        'units': 'Units', 'student_bedspaces': 'Student bedspaces', 'final_grant': 'Final grant', 'start': 'Start on site', 'expiry': 'Expiry', 'est_start_q': 'Est. start',
                         'est_finish_q': 'Est. last completions', 'confidence': 'Confidence', 'basis': 'Basis for estimate', 'Complete units': 'Complete'})
 sc = sc.sort_values(['Location', 'Sector', 'Units'], ascending=[True, True, False]).reset_index(drop=True)
 WS_P = wb.create_sheet('Schemes')
-npr = sheet_table(WS_P, sc, [9, 11, 36, 18, 18, 26, 10, 20, 20, 22, 24, 20, 7, 11, 11, 11, 10, 11, 12, 50, 9] + [8] * 6 + [10])
+npr = sheet_table(WS_P, sc, [9, 11, 36, 18, 18, 26, 10, 20, 20, 22, 24, 20, 7, 9, 11, 11, 11, 10, 11, 12, 50, 9] + [8] * 6 + [10])
 col = {c: L(i + 1) for i, c in enumerate(sc.columns)}
 scol = {c: L(i + 1) for i, c in enumerate(sites.columns)}
 PR = lambda c: f"Schemes!${col[c]}$2:${col[c]}${npr}"
@@ -197,6 +204,7 @@ kpis = [
     ('Consented in city outside audit land', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[2]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('Consented in county (audit pending)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[3]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('All consented units', '=B8+B11+B12+B13', '#,##0'),
+    ('Student bedspaces consented (PBSA)*', f'=SUMIFS({PR("Student bedspaces")},{PR("Tenure")},"Student (PBSA)",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('Expected completions Q4 2026–2030', f'=SUM({PR("Q4 2026")})+SUM({PR("2027")})+SUM({PR("2028")})+SUM({PR("2029")})+SUM({PR("2030")})', '#,##0'),
 ]
 hdr(D, r, ['Headline', 'Value'])
@@ -205,6 +213,8 @@ for k, f, fmt in kpis:
     put(D, r, 1, k, None, fill=KP)
     put(D, r, 2, f, fmt, bold=True, fill=KP)
     r += 1
+D.cell(row=r, column=1, value='* PBSA schemes are counted in the unit totals by their recorded units (cluster apartments), not bedspaces. See Breakdowns.').font = Font(name=F, size=8, italic=True)
+r += 1
 assert D['A7'].value.startswith('Estimated') and D['A8'].value.startswith('Consented on audit') and D['A11'].value.startswith('Consented on edge')
 r += 1
 
@@ -436,6 +446,24 @@ put(B, r, 1, 'Total', None, bold=True, fill=SUB)
 for j in range(2, 8):
     put(B, r, j, f'=SUM({L(j)}{b3}:{L(j)}{r - 1})', bold=True, fill=SUB)
 
+r += 2
+B.cell(row=r, column=1, value='Purpose-built student accommodation: units and bedspaces').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+r += 1
+hdr(B, r, ['Scheme', 'Planning ref', 'Location', 'Status', 'Units (in totals)', 'Bedspaces', 'Est. start', 'Est. last completions', 'Confidence'])
+r += 1
+pb = sc[sc.Tenure == 'Student (PBSA)'].sort_values('Student bedspaces', ascending=False)
+b4 = r
+for _, d in pb.iterrows():
+    vals = [d['Scheme'], d['Planning ref'], d['Location'], d['Status'], d['Units'], d['Student bedspaces'], d['Est. start'], d['Est. last completions'], d['Confidence']]
+    for j, v in enumerate(vals, 1):
+        put(B, r, j, cv(v), '#,##0' if j in (5, 6) else None)
+    r += 1
+put(B, r, 1, 'Total (consented, excl. expired)', None, bold=True, fill=SUB)
+for j, c_ in [(5, 'Units'), (6, 'Student bedspaces')]:
+    put(B, r, j, f'=SUMIFS({PR(c_)},{PR("Tenure")},"Student (PBSA)",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', bold=True, fill=SUB)
+r += 1
+B.cell(row=r, column=1, value='Units are as recorded by CIS (usually cluster apartments). Bedspaces from the PBSA schedule or the planning register. Whitebox (25/60113): 196 units, 1,400 bedspaces. Existing PBSA stock is not pipeline and is not included.').font = Font(name=F, size=8, italic=True)
+
 # ------------------------------------------------------------------ Assumptions
 N = wb.create_sheet('Assumptions')
 N.column_dimensions['A'].width = 28
@@ -445,11 +473,12 @@ N['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
 text = [
     ('Audit land', 'Council city sites audit (in_sca/sca.gpkg): sites drawn twice under one reference merged; rsca 2 and 112 reinstated (removed in the council’s 04/12/25 review with no reason recorded; checked as still developable). County audit not yet supplied.'),
     ('Capacity', 'The council’s estimate per site (area × density band). Not a design-led figure. rsca 112 has a narrow, irregular shape, so its capacity is likely an upper figure.'),
-    ('Permissions', 'Counted residential schemes from the pipeline tracker after primacy rules (no double counting of amendments, repeats or superseded applications), plus register-only Part 8s, KPMG additions and granted PBSA. PBSA counted in the units recorded for the scheme.'),
+    ('Permissions', 'Counted residential schemes from the pipeline tracker after primacy rules (no double counting of amendments, repeats or superseded applications), plus register-only Part 8s, KPMG additions and granted PBSA. PBSA counted in the units recorded for the scheme (cluster apartments); bedspaces are shown separately and are not added to unit totals.'),
     ('Location', 'Within site = scheme point inside an audit polygon. Edge = within 50 m of a site, not inside (point precision; check against the site boundary). City – outside audit land = more than 50 m from any audit site. County = outside the city audit area; cannot be assessed until the county audit is supplied. Scheme points come from the planning register where available.'),
     ('Consented', 'Complete + under construction + permitted not started (live) + stalled. Expired permissions and applications still in planning are shown separately and not counted as consent.'),
     ('Sector', 'Private; Public – local authority (incl. Part 8 and council own-build); Public – AHB; Public – LDA. From the tracker’s owner classification.'),
     ('Delivery year: on site', 'Build period = the larger of (a) the median start-to-completion time for the scheme’s size band and (b) units ÷ median build rate for the band. First homes complete a year after start, or halfway through the build if shorter. Units are spread evenly from then until the end of the build, counting only time after 08/10/2026. Schemes past their estimated finish, or within a year of it, have their units spread over the next 12 months.'),
+    ('Delivery year: student (PBSA)', 'Purpose-built student schemes finish as one block: all units placed in the year the build ends (start + median build period for the size band). The Castletroy mixed scheme (26/60089) is phased like housing.'),
     ('Delivery year: permitted', 'Start = final grant + median grant-to-start time for the size band. Contract awarded / commencement expected (CIS): start within 6 months. At tender: start in 6–12 months. Past the usual start date with no commencement notice: start assumed in 9 months, low confidence. Then the same build profile as above.'),
     ('Not projected', 'Stalled (CIS), expired and in-planning units are not placed in a year.'),
     ('No probability weighting', 'Every permitted unit is assumed to be built. In practice some live permissions will lapse; the study found a share of permissions never start. Read Medium and Low rows as upper figures.'),

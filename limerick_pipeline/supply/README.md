@@ -18,6 +18,6 @@
 
 Council sites drawn as two polygons under one reference (rsca 14, 49, 56, 133) are merged into one multipart site so capacity is counted once.
 
-Sites the council removed in its 04/12/25 review with no reason recorded are added back from the initial audit (`in_audit0/original.shp`) when checked and found still developable. They are listed in `REINSTATE` in the build script and say so in `reconcile_action`. Currently: rsca 2 (Clonmacken Road, 2.193 ha, 77 units) – the adjoining land was built under 17/470; this remainder is undeveloped.
+Sites the council removed in its 04/12/25 review with no reason recorded are added back from the initial audit (`in_audit0/original.shp`) when checked and found still developable. They are listed in `REINSTATE` in the build script and say so in `reconcile_action`. Currently: rsca 2 (Clonmacken Road, 2.193 ha, 77 units) – the adjoining land was built under 17/470; this remainder is undeveloped. rsca 112 (City Centre, council-owned, 1.346 ha, 61 units) – undeveloped, no permission; narrow irregular shape, so treat the capacity as an upper figure.
 
 Rebuild: run `build_supply_gpkg.py` from the folder holding the study inputs (delivery.pkl, the pipeline workbook, shcp feed/crosswalk, nbh/lea/lda geojson, KPMG and PBSA shapefiles, the council sites GeoPackage at `in_sca/sca.gpkg`, the initial audit at `in_audit0/original.shp`).

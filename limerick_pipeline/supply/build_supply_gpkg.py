@@ -58,7 +58,8 @@ sites = gpd.GeoDataFrame({
 }, geometry=S0.geometry, crs=ITM)
 
 # sites the council's 04/12/25 review removed with no recorded reason, checked and still developable (initial audit fid -> why)
-REINSTATE = {56: 'Reinstated: removed in council review with no reason recorded; adjoining land built under 17/470, this remainder undeveloped'}
+REINSTATE = {56: 'Reinstated: removed in council review with no reason recorded; adjoining land built under 17/470, this remainder undeveloped',
+             144: 'Reinstated: removed in council review with no reason recorded; council-owned, undeveloped, no permission. Irregular narrow shape, so the density-based capacity may overstate what fits'}
 A0 = gpd.read_file('in_audit0/original.shp').to_crs(ITM)
 A0 = A0[A0.fid.isin(REINSTATE)]
 if len(A0):

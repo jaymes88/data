@@ -25,3 +25,7 @@ Rebuild: run `build_supply_gpkg.py` from the folder holding the study inputs (de
 ## Standalone city sites audit
 
 `Limerick_City_Sites_Audit_2026-10.gpkg` (layer `city_sites`) is the council's city sites file as it stands before the county audit is added: 133 sites, with sites drawn twice under one reference merged and rsca 2 and 112 reinstated. Each site carries its capacity plus the planning reconciliation (complete, under construction, permitted not started, expired, in planning, residual, flag). It is the `sites` layer joined to `site_reconciliation`, exported on its own.
+
+## Dashboard workbook
+
+`Limerick_Housing_Supply_Dashboard.xlsx` (built by `supply_dashboard.py` from the GeoPackage): audit land, capacity, consents on and off audit land, and expected completions by year, split by sector, location, tenure and neighbourhood. Dashboard and Breakdowns totals are live formulas on the Sites and Schemes sheets. Delivery years are estimates from Limerick timing medians; the method is on the Assumptions sheet.

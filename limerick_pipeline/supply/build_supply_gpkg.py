@@ -57,6 +57,22 @@ sites = gpd.GeoDataFrame({
     'capacity_units': S0.cap.round(0), 'reconcile_action': S0.Action,
 }, geometry=S0.geometry, crs=ITM)
 
+# sites the council's 04/12/25 review removed with no recorded reason, checked and still developable (initial audit fid -> why)
+REINSTATE = {56: 'Reinstated: removed in council review with no reason recorded; adjoining land built under 17/470, this remainder undeveloped'}
+A0 = gpd.read_file('in_audit0/original.shp').to_crs(ITM)
+A0 = A0[A0.fid.isin(REINSTATE)]
+if len(A0):
+    nb = gpd.read_file('nbh.geojson').to_crs(ITM)[['nbhd', 'geometry']]
+    A0 = A0.assign(nbhd=gpd.sjoin(gpd.GeoDataFrame(geometry=A0.representative_point(), crs=ITM), nb, predicate='within').nbhd)
+    sites = pd.concat([sites, gpd.GeoDataFrame({
+        'site_id': A0.rsca.astype(int).map(lambda v: f'CITY-{v}'),
+        'rsca': A0.rsca.astype('Int64'), 'scope': 'City', 'neighbourhood': A0.nbhd, 'local_name': A0.neighbourh,
+        'register_status': A0.revised_st, 'landowner': A0.Ownership, 'zoning': A0.joined_Zon.str.strip(),
+        'site_type': A0.joined_Typ.str.strip(), 'density_band': A0.joined_Den, 'area_ha': A0.joined_A_1.round(3),
+        'capacity_units': A0.joined_C_3.round(0), 'reconcile_action': A0.fid.map(REINSTATE),
+    }, geometry=A0.geometry, crs=ITM)], ignore_index=True)
+    assert sites.site_id.is_unique
+
 # ------------------------------------------------------------------ permissions (one row per counted scheme)
 D = pd.read_pickle('delivery.pkl')
 apps = pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx', sheet_name='Applications', dtype={'CIS Reference': str})

@@ -259,11 +259,17 @@ C.cell(row=rr, column=1, value='2031+ left at zero: the allowance is a yearly ra
 ALREF = lambda j: f"'CSO reconciliation'!{L(j)}${ALROW}"
 
 rr += 2
-C.cell(row=rr, column=1, value='Register grants of 10+ units since 2021 not found in the tracker (check list)').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+C.cell(row=rr, column=1, value='Register grants of 10+ units since 2021 not in CIS: checked 08/10/2026').font = Font(name=F, bold=True, size=11, color='1F3A5F')
 rr += 1
 G = CR['grants']
-chk = G[G.cat.str.startswith('10+: not') & (G.yr >= 2021)].sort_values('n', ascending=False)
-hdr(C, rr, ['Description', 'Register ref', 'Decided', 'Units (register)', 'Address'])
+CHECKED = {'22841': 'Refused on appeal, PL91.317106 (20/10/2025). Not live.',
+           '2460606': 'Refused on appeal, PL91.322380 (20/08/2025). Not live.',
+           '211820': 'Change of use within 19/710 (Hassett\u2019s Cross, already tracked); expired 14/03/2026. Not new supply.',
+           '20525': 'Added to tracker. Granted on appeal PL91.309917 (02/12/2021); expires 01/12/2026; no commencement notice.',
+           '24151': 'Added to tracker. Granted 15/01/2025; expires 14/01/2030; no commencement notice.'}
+chk = G[(G.cat.str.startswith('10+: not') | G.ref.isin(CHECKED)) & (G.yr >= 2021)].drop_duplicates('ref').sort_values('n', ascending=False)
+hdr(C, rr, ['Description', 'Register ref', 'Decided', 'Units (register)', 'Address', 'Finding'])
+C.column_dimensions['F'].width = 13
 rr += 1
 for _, g_ in chk.iterrows():
     put(C, rr, 1, str(g_.DevelopmentDescription)[:160], None)
@@ -271,8 +277,9 @@ for _, g_ in chk.iterrows():
     put(C, rr, 3, g_.dd.strftime('%d/%m/%Y'), None)
     put(C, rr, 4, float(g_.n))
     put(C, rr, 5, str(g_.DevelopmentAddress).strip(), None)
+    put(C, rr, 6, CHECKED.get(g_.ref, 'Not yet checked'), None)
     rr += 1
-C.cell(row=rr, column=1, value='Not added to the tracker: each needs checking (live, expired, superseded, or already counted under another reference).').font = Font(name=F, size=8, italic=True)
+C.cell(row=rr, column=1, value='Two live schemes (Croom, 24 homes) added to the tracker as register-only records. The others are refused or not new supply.').font = Font(name=F, size=8, italic=True)
 
 # ------------------------------------------------------------------ Dashboard
 D = wb.create_sheet('Dashboard', 0)

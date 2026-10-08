@@ -285,6 +285,33 @@ for _, r in extra.iterrows():
         ccc_units=ccc.CCC_Units_Completed.sum() if len(ccc) else 0, ccc_count=len(ccc), completion=pd.NaT, cis_partial=[],
         barriers_noted='', last_cis_entry=pd.NaT, last_updated=pd.NaT,
     ))
+# ---------- private schemes in the register that CIS does not hold (checked against the CSO reconciliation) ----------
+# ref -> note; each checked on the register and An Coimisiún Pleanála case page on 08/10/2026
+REG_ADD = {'20525': 'Granted on appeal PL91.309917 (02/12/2021); expires 01/12/2026; no commencement notice',
+           '24151': 'Granted 15/01/2025; expires 14/01/2030; no commencement notice'}
+for ref, note in REG_ADD.items():
+    r = REG.loc[ref]
+    b, bc_la, bc_ahb = bc_for({ref})
+    cn = b.dropna(subset=['CN_Commencement_Date']).drop_duplicates('CN_Number')
+    bc_start = cn.CN_Commencement_Date.min() if len(cn) else pd.NaT
+    nb = nbhd_of(r.lat, r.lon)
+    desc = str(r.DevelopmentDescription)
+    appealed = bool(str(r.AppealRefNumber).strip())
+    rows.append(dict(
+        pid='REG-' + ref, site='', ref=ref, register_ref=ref, source='Register only (private, not in CIS)',
+        heading='Register: ' + re.sub(r'\s+', ' ', desc)[:70], settlement=settlement_of(r.DevelopmentAddress, nb),
+        lat=r.lat, lon=r.lon, lea=lea_of(r.lat, r.lon), nbhd=nb, units=float(r.NumResidentialUnits), units_completed_stated=np.nan,
+        stage='Commenced (building control)' if pd.notna(bc_start) else 'Permission Granted',
+        tier='', relationship='Primary', rel_conf='', dwelling_type=dwelling_type(desc, ''), route='Standard planning application',
+        owner='Private', received=r.ReceivedDate, council_decision=r.DecisionDate,
+        final_grant=r.AppealDecisionDate if appealed and pd.notna(r.AppealDecisionDate) else (r.GrantDate if pd.notna(r.GrantDate) else r.DecisionDate),
+        fi=pd.notna(r.FIRequestDate), appealed=appealed,
+        register_outcome='Granted on appeal' if appealed else 'Granted', expiry=r.ExpiryDate, bc_start=bc_start, cis_start=pd.NaT,
+        start=bc_start, start_source='Commencement notice' if pd.notna(bc_start) else '', bc_notices=len(cn),
+        bc_units_commenced=cn.CN_Units_for_phase.sum() if len(cn) else 0,
+        ccc_first=pd.NaT, ccc_last=pd.NaT, ccc_units=0, ccc_count=0, completion=pd.NaT, cis_partial=[],
+        barriers_noted='', last_cis_entry=pd.NaT, last_updated=pd.NaT,
+    ))
 D = pd.DataFrame(rows)
 
 # ---------- Department social housing construction report (vetted matches only) ----------

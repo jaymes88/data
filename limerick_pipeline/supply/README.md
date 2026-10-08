@@ -29,3 +29,7 @@ Rebuild: run `build_supply_gpkg.py` from the folder holding the study inputs (de
 ## Dashboard workbook
 
 `Limerick_Housing_Supply_Dashboard.xlsx` (built by `supply_dashboard.py` from the GeoPackage): audit land, capacity, consents on and off audit land, and expected completions by year, split by sector, location, tenure and neighbourhood. Dashboard and Breakdowns totals are live formulas on the Sites and Schemes sheets. Delivery years are estimates from Limerick timing medians; the method is on the Assumptions sheet.
+
+## CSO reconciliation
+
+`cso_recon.py` compares CSO BHQ17 (units for which permission granted, Limerick; `inputs/CSO_BHQ17_Limerick.csv`) with granted residential applications in the planning register, split into single dwellings, 2–9 unit schemes, 10+ amendments, other 10+ and schemes in the tracker. Run it before `supply_dashboard.py`. The dashboard's `CSO reconciliation` sheet adds a yearly allowance for one-off houses (CSO 2023–2025 average) and 2–9 unit schemes outside the tracker (register 2023–2025 average), multiplied by an editable build-out share (default 73%, from the delivery study's 1–9 unit band).

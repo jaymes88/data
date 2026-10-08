@@ -169,6 +169,111 @@ scol = {c: L(i + 1) for i, c in enumerate(sites.columns)}
 PR = lambda c: f"Schemes!${col[c]}$2:${col[c]}${npr}"
 SR = lambda c: f"Sites!${scol[c]}$2:${scol[c]}${ns}"
 
+def put(ws, row, c, v, fmt='#,##0', bold=False, fill=None):
+    x = ws.cell(row=row, column=c, value=v)
+    x.font = Font(name=F, size=10, bold=bold)
+    x.number_format = fmt or 'General'
+    x.border = Border(bottom=TH)
+    if fill:
+        x.fill = fill
+    return x
+
+
+# ------------------------------------------------------------------ CSO reconciliation and small-scheme allowance
+CR = pd.read_pickle('cso_recon.pkl')
+Y = CR['years']
+C = wb.create_sheet('CSO reconciliation')
+C.sheet_view.showGridLines = False
+C['A1'] = 'CSO planning permissions vs the planning register and the tracker'
+C['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
+C['A2'] = ('CSO: BHQ17, units for which permission granted, Limerick City & County Council (downloaded 08/10/2026). '
+           f'Register: National Planning Applications dataset, Limerick, granted permissions with residential units, by decision date. '
+           f'{int(Y.index.max())} covers {", ".join(CR["last_quarters"])} only.')
+C['A2'].font = Font(name=F, size=9, italic=True)
+ycols = ['CSO one-off houses', 'CSO scheme houses', 'CSO apartments', 'CSO total', 'Register: Single dwelling (one-off)', 'Register: Small scheme (2–9)',
+         'Register: 10+: amendment to earlier permission', 'Register: 10+: not in tracker (mostly pre-2019 or completed before CIS window)',
+         'Register: In tracker', 'Register total']
+heads = ['Year', 'CSO one-off houses', 'CSO scheme houses', 'CSO apartments', 'CSO total', 'Register: single dwellings, not in tracker',
+         'Register: 2–9 unit schemes, not in tracker', 'Register: 10+ amendments to earlier permissions', 'Register: other 10+ not in tracker',
+         'Register: schemes in tracker', 'Register total', 'CSO minus register']
+hdr(C, 4, heads)
+C.row_dimensions[4].height = 54
+C.column_dimensions['A'].width = 40
+for j in range(2, 13):
+    C.column_dimensions[L(j)].width = 13
+YR0 = 5
+for i, (yv, row) in enumerate(Y.iterrows()):
+    rr = YR0 + i
+    put(C, rr, 1, f'{int(yv)}' + (' (Q1–Q2)' if row.quarters < 4 else ''), None)
+    for j, c_ in enumerate(ycols, 2):
+        put(C, rr, j, float(row[c_]))
+    put(C, rr, 12, f'=E{rr}-K{rr}', bold=True)
+YR1 = YR0 + len(Y) - 1
+full = [YR0 + i for i, (yv, row) in enumerate(Y.iterrows()) if row.quarters == 4]
+rr = YR1 + 1
+put(C, rr, 1, f'Total {int(Y.index.min())}–{int(Y[Y.quarters == 4].index.max())} (full years)', None, bold=True, fill=SUB)
+for j in range(2, 13):
+    put(C, rr, j, f'=SUM({L(j)}{full[0]}:{L(j)}{full[-1]})', bold=True, fill=SUB)
+TOTROW = rr
+rr += 1
+C.cell(row=rr, column=1, value='Year-to-year differences are likely due to timing (decision date vs grant), appeals decided by An Bord Pleanála / An Coimisiún Pleanála, and amendments that re-permit units already counted. Over the full years the two sources are close.').font = Font(name=F, size=8, italic=True)
+
+rr += 2
+C.cell(row=rr, column=1, value='Small-scheme and one-off allowance (supply the tracker does not hold)').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+rr += 1
+ys = [YR0 + i for i, (yv, row) in enumerate(Y.iterrows()) if 2023 <= yv <= 2025]
+AL = {}
+blue = Font(name=F, size=10, bold=True, color='0000FF')
+for key, k, f, fmt in [('period', 'Averaging period', '2023–2025 (latest three full years)', None),
+                  ('oneoff', 'One-off houses permitted per year (CSO average)', f'=AVERAGE(B{ys[0]}:B{ys[-1]})', '#,##0'),
+                  ('small', '2–9 unit schemes not in tracker, units per year (register average)', f'=AVERAGE(G{ys[0]}:G{ys[-1]})', '#,##0'),
+                  ('built', 'Share of permitted units built (input)', 0.73, '0%'),
+                  ('annual', 'Annual allowance (completions per year)', None, '#,##0'),
+                  ('q4', 'Share of 2026 remaining after 08/10/2026', '=(DATE(2027,1,1)-DATE(2026,10,8))/365', '0%')]:
+    put(C, rr, 1, k, None, fill=KP)
+    if key == 'annual':
+        f = f'=(B{AL["oneoff"]}+B{AL["small"]})*B{AL["built"]}'
+    x = put(C, rr, 2, f, fmt, bold=True, fill=KP)
+    AL[key] = rr
+    if key == 'built':
+        x.font = blue
+    rr += 1
+C.cell(row=rr, column=1, value=('Share built: 73% of units in 1–9 unit schemes permitted two or more years before the report date had started (delivery study, implementation by size). '
+                                 'It comes from CIS small schemes, not one-off houses, so treat it as an assumption; change the blue cell to test others. '
+                                 'Steady state assumed: recent permissions run at the same rate as past ones, and each year’s completions come from permissions granted about three years earlier.')).font = Font(name=F, size=8, italic=True)
+C.merge_cells(start_row=rr, start_column=1, end_row=rr, end_column=12)
+C.cell(row=rr, column=1).alignment = Alignment(wrap_text=True, vertical='top')
+C.row_dimensions[rr].height = 36
+rr += 2
+hdr(C, rr, ['Allowance by year'] + YEARS + ['Q4 2026–2030'])
+rr += 1
+ALROW = rr
+put(C, rr, 1, 'Small schemes and one-off houses', None)
+put(C, rr, 2, f'=B{AL["annual"]}*B{AL["q4"]}')
+for j in range(3, 7):
+    put(C, rr, j, f'=$B${AL["annual"]}')
+put(C, rr, 7, 0)
+put(C, rr, 8, f'=SUM(B{rr}:F{rr})', bold=True)
+rr += 1
+C.cell(row=rr, column=1, value='2031+ left at zero: the allowance is a yearly rate, and the tracker’s 2031+ column is the tail of known schemes.').font = Font(name=F, size=8, italic=True)
+ALREF = lambda j: f"'CSO reconciliation'!{L(j)}${ALROW}"
+
+rr += 2
+C.cell(row=rr, column=1, value='Register grants of 10+ units since 2021 not found in the tracker (check list)').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+rr += 1
+G = CR['grants']
+chk = G[G.cat.str.startswith('10+: not') & (G.yr >= 2021)].sort_values('n', ascending=False)
+hdr(C, rr, ['Description', 'Register ref', 'Decided', 'Units (register)', 'Address'])
+rr += 1
+for _, g_ in chk.iterrows():
+    put(C, rr, 1, str(g_.DevelopmentDescription)[:160], None)
+    put(C, rr, 2, g_.ref, None)
+    put(C, rr, 3, g_.dd.strftime('%d/%m/%Y'), None)
+    put(C, rr, 4, float(g_.n))
+    put(C, rr, 5, str(g_.DevelopmentAddress).strip(), None)
+    rr += 1
+C.cell(row=rr, column=1, value='Not added to the tracker: each needs checking (live, expired, superseded, or already counted under another reference).').font = Font(name=F, size=8, italic=True)
+
 # ------------------------------------------------------------------ Dashboard
 D = wb.create_sheet('Dashboard', 0)
 D.sheet_view.showGridLines = False
@@ -182,14 +287,6 @@ D['A2'].font = Font(name=F, size=9, italic=True)
 r = 4
 
 
-def put(ws, row, c, v, fmt='#,##0', bold=False, fill=None):
-    x = ws.cell(row=row, column=c, value=v)
-    x.font = Font(name=F, size=10, bold=bold)
-    x.number_format = fmt or 'General'
-    x.border = Border(bottom=TH)
-    if fill:
-        x.fill = fill
-    return x
 
 
 # KPI block
@@ -205,7 +302,8 @@ kpis = [
     ('Consented in county (audit pending)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[3]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('All consented units', '=B8+B11+B12+B13', '#,##0'),
     ('Student bedspaces consented (PBSA)*', f'=SUMIFS({PR("Student bedspaces")},{PR("Tenure")},"Student (PBSA)",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
-    ('Expected completions Q4 2026–2030', f'=SUM({PR("Q4 2026")})+SUM({PR("2027")})+SUM({PR("2028")})+SUM({PR("2029")})+SUM({PR("2030")})', '#,##0'),
+    ('Expected completions Q4 2026–2030, tracked schemes', f'=SUM({PR("Q4 2026")})+SUM({PR("2027")})+SUM({PR("2028")})+SUM({PR("2029")})+SUM({PR("2030")})', '#,##0'),
+    ('+ small schemes and one-off houses (CSO-based)', f'={ALREF(8)}', '#,##0'),
 ]
 hdr(D, r, ['Headline', 'Value'])
 r += 1
@@ -291,12 +389,20 @@ for s_ in SECT:
     put(D, r, 8, f'=SUM(B{r}:G{r})', bold=True)
     put(D, r, 9, f'=SUMIFS({PR("Not projected")},{PR("Sector")},$A{r})')
     r += 1
+ALLOW = 'Small schemes and one-off houses (allowance)'
+def allow_row(ws, row):
+    put(ws, row, 1, ALLOW, None)
+    for j in range(2, 8):
+        put(ws, row, j, f'={ALREF(j)}')
+    put(ws, row, 8, f'=SUM(B{row}:G{row})', bold=True)
+allow_row(D, r)
+r += 1
 put(D, r, 1, 'Total', None, bold=True, fill=SUB)
 for j in range(2, 10):
     put(D, r, j, f'=SUM({L(j)}{t4}:{L(j)}{r - 1})', bold=True, fill=SUB)
 t4end = r
 r += 1
-D.cell(row=r, column=1, value='* Stalled, expired or still in planning. Shown for reference, not placed in a year.').font = Font(name=F, size=8, italic=True)
+D.cell(row=r, column=1, value='* Stalled, expired or still in planning. Shown for reference, not placed in a year. Allowance = one-off houses and 2–9 unit schemes the tracker does not hold (CSO reconciliation sheet).').font = Font(name=F, size=8, italic=True)
 r += 2
 
 # table 5: expected delivery by year and location
@@ -311,6 +417,8 @@ for loc in LOC:
         put(D, r, j, f'=SUMIFS({PR(y)},{PR("Location")},$A{r})')
     put(D, r, 8, f'=SUM(B{r}:G{r})', bold=True)
     r += 1
+allow_row(D, r)
+r += 1
 put(D, r, 1, 'Total', None, bold=True, fill=SUB)
 for j in range(2, 9):
     put(D, r, j, f'=SUM({L(j)}{t5}:{L(j)}{r - 1})', bold=True, fill=SUB)
@@ -328,6 +436,8 @@ for c_ in ['High', 'Medium', 'Low']:
         put(D, r, j, f'=SUMIFS({PR(y)},{PR("Confidence")},$A{r})')
     put(D, r, 8, f'=SUM(B{r}:G{r})', bold=True)
     r += 1
+allow_row(D, r)
+r += 1
 put(D, r, 1, 'Total', None, bold=True, fill=SUB)
 for j in range(2, 9):
     put(D, r, j, f'=SUM({L(j)}{t6}:{L(j)}{r - 1})', bold=True, fill=SUB)
@@ -341,10 +451,10 @@ ch.type, ch.grouping, ch.overlap = 'col', 'stacked', 100
 ch.title = 'Expected completions by year and sector'
 ch.y_axis.title = 'Units'
 ch.y_axis.majorGridlines = None
-data = Reference(D, min_col=1, max_col=7, min_row=t4, max_row=t4 + 3)
+data = Reference(D, min_col=1, max_col=7, min_row=t4, max_row=t4 + 4)
 ch.add_data(data, from_rows=True, titles_from_data=True)
 ch.set_categories(Reference(D, min_col=2, max_col=7, min_row=t4 - 1))
-for s_, colr in zip(ch.series, ['1F3A5F', '4F81BD', '9BBB59', 'F2A541']):
+for s_, colr in zip(ch.series, ['1F3A5F', '4F81BD', '9BBB59', 'F2A541', 'A6A6A6']):
     s_.graphicalProperties.solidFill = colr
     s_.graphicalProperties.line.solidFill = colr
 ch.height, ch.width = 6.6, 16.5
@@ -373,6 +483,9 @@ notes = [
     f'{live:,.0f} units have a live permission but no start. {lowu:,.0f} of them are past the usual time to start or close to expiry, so they are rated low confidence.',
     f'Public bodies (council, AHBs, LDA) hold {pub / c.units.sum():.0%} of consented units.',
     f'Projected completions peak in {peak}. Figures after 2028 depend mostly on permissions that have not started, so treat them as an upper figure.',
+    (lambda F_, yy: f'CSO and the planning register agree closely over {int(F_.index.min())}–{int(F_.index.max())} ({F_["CSO total"].sum():,.0f} vs {F_["Register total"].sum():,.0f} units permitted). '
+     f'The tracker holds the larger schemes; about {yy["CSO one-off houses"].mean():,.0f} one-off houses and {yy["Register: Small scheme (2–9)"].mean():,.0f} units in 2–9 unit schemes are permitted each year outside it (2023–2025). '
+     f'At 73% built, that adds about {0.73 * (yy["CSO one-off houses"].mean() + yy["Register: Small scheme (2–9)"].mean()):,.0f} homes a year to the projection.')(Y[Y.quarters == 4], Y.loc[2023:2025]),
     'Delivery years are our estimates from timings observed in Limerick (see Assumptions). They are not developer programmes.',
 ]
 D.cell(row=r, column=1, value='Interpretation').font = Font(name=F, bold=True, size=11, color='1F3A5F')

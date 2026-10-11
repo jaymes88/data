@@ -8,7 +8,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import FormulaRule
 
 D = pd.read_pickle('land_register.pkl')
-parcels, pp, YC = D['parcels'].drop(columns='geometry'), D['pp'], D['YC']
+parcels, pp, YC, CL = D['parcels'].drop(columns='geometry'), D['pp'], D['YC'], D['CL']
 XL = 'Limerick_Housing_Land_Register.xlsx'
 MAXR = 3000                                          # formulas cover room for new rows
 F = 'Arial'
@@ -46,7 +46,8 @@ def val(v):
 # ------------------------------------------------------------------ Permissions sheet
 WP = wb.active
 WP.title = 'Permissions'
-pcols = ['perm_id', 'parcel_id', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'counts_toward_totals',
+pcols = ['perm_id', 'parcel_id', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'status_source', 'status_cis',
+         'geod_new_built', 'geod_new_undercon', 'geod_suggestion', 'geod_extract', 'counts_toward_totals',
          'relationship', 'tenure', 'delivery_body', 'route', 'final_grant', 'expiry', 'start_on_site', 'est_start', 'est_last_completions',
          'confidence'] + YC + ['match_basis', 'source', 'last_updated', 'notes']
 pdat = pp[pcols].sort_values(['parcel_id', 'perm_id'])
@@ -67,7 +68,7 @@ for i in range(2, MAXR + 1):
         c = WP.cell(row=i, column=len(heads), value=f)
         c.font = Font(name=F, size=9, bold=True, color='9C0006')
         c.fill = CALC
-widths = {'perm_id': 10, 'parcel_id': 16, 'planning_ref': 12, 'register_ref': 12, 'scheme': 36, 'units': 7, 'student_bedspaces': 9, 'status': 20,
+widths = {'status_source': 18, 'status_cis': 18, 'geod_suggestion': 26, 'perm_id': 10, 'parcel_id': 16, 'planning_ref': 12, 'register_ref': 12, 'scheme': 36, 'units': 7, 'student_bedspaces': 9, 'status': 20,
           'counts_toward_totals': 9, 'relationship': 22, 'tenure': 18, 'delivery_body': 18, 'route': 20, 'notes': 30, 'check': 22, 'source': 18}
 for h, c in pc.items():
     WP.column_dimensions[c].width = widths.get(h, 11)
@@ -79,7 +80,7 @@ WS = wb.create_sheet('Parcels', 0)
 inputs = ['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
           'developable_area_ha', 'mapped_area_ha', 'council_capacity_units', 'capacity_basis', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
 calc = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
-        'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['permissions', 'flag']
+        'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['permissions', 'geod_new_built', 'parcel_status', 'flag']
 heads = inputs + calc
 hdr(WS, 1, heads, [h in calc for h in heads])
 sc = {h: L(j) for j, h in enumerate(heads, 1)}
@@ -100,6 +101,9 @@ for i, row in enumerate(pdata.itertuples(index=False), 2):
         'total_supply_units': f'={sc["consented_units"]}{i}+{sc["unconsented_capacity"]}{i}',
         'future_supply_units': f'={sc["total_supply_units"]}{i}-{sc["complete_units"]}{i}',
         'permissions': f'=COUNTIFS({PR("parcel_id")},{A},{cnt})',
+        'geod_new_built': f'=SUMIFS({PR("geod_new_built")},{PR("parcel_id")},{A},{cnt})',
+        'parcel_status': (f'=IF(AND({sc["consented_units"]}{i}>0,{sc["complete_units"]}{i}>={sc["consented_units"]}{i},{sc["unconsented_capacity"]}{i}=0),"Built out",'
+                          f'IF({sc["complete_units"]}{i}>0,"Partly built",IF({sc["consented_units"]}{i}>0,"Consented – not built","No consent")))'),
         'flag': (f'=IF(AND({sc["council_capacity_units"]}{i}<>"",{sc["consented_units"]}{i}>1.1*{sc["council_capacity_units"]}{i}),"Consented above capacity",'
                  f'IF(AND(LEFT({sc["parcel_source"]}{i},8)="Planning",{sc["permissions"]}{i}=0),"Consent parcel with no permission",'
                  f'IF(COUNTIF($A$2:$A${MAXR},{A})>1,"Duplicate parcel_id","")))'),
@@ -111,9 +115,11 @@ for i, row in enumerate(pdata.itertuples(index=False), 2):
         c.font = Font(name=F, size=9, bold=h in ('total_supply_units', 'flag'), color='9C0006' if h == 'flag' else '000000')
         c.fill = CALC
         c.number_format = '#,##0' if h not in YC else '#,##0.0'
+        if h == 'parcel_status':
+            c.font = Font(name=F, size=9, bold=True)
 for h, c in sc.items():
     WS.column_dimensions[c].width = {'parcel_id': 18, 'parcel_source': 24, 'local_name': 32, 'notes': 34, 'capacity_basis': 22,
-                                      'register_status': 18, 'flag': 22, 'neighbourhood': 16, 'lea': 16}.get(h, 10)
+                                      'register_status': 18, 'flag': 22, 'parcel_status': 18, 'neighbourhood': 16, 'lea': 16}.get(h, 10)
 WS.freeze_panes = 'B2'
 WS.auto_filter.ref = f'A1:{L(len(heads))}{n + 1}'
 SR = lambda h: f"Parcels!${sc[h]}$2:${sc[h]}${MAXR}"
@@ -158,7 +164,8 @@ def put(r, c, v, fmt='#,##0', bold=False, fill=None):
 r = 4
 cols = ['Parcels', 'Developable ha', 'Consented', 'of which complete', 'Unconsented capacity', 'Total supply', 'Future supply']
 fields = [None, 'developable_area_ha', 'consented_units', 'complete_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units']
-for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:3]), ('By scope', 'scope', ['City', 'County'])]:
+for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:3]), ('By scope', 'scope', ['City', 'County']),
+                          ('By parcel status', 'parcel_status', ['Built out', 'Partly built', 'Consented – not built', 'No consent'])]:
     SM.cell(row=r, column=1, value=title).font = Font(name=F, bold=True, size=11, color='1F3A5F')
     r += 1
     for j, h in enumerate([''] + cols, 1):
@@ -222,6 +229,8 @@ steps = [
     ('Expired permissions', 'Set status to Expired – not started. The units drop out of consented supply; on an audit parcel the council capacity becomes unconsented capacity again.'),
     ('Council capacity', 'Audit parcels only. If a permission shows the capacity was wrong, update council_capacity_units and say why in notes. Consent parcels have no capacity figure: their supply is the consented units.'),
     ('County audit', 'Add county audit parcels with parcel_source = Council audit – county and scope = County. Move county permissions onto them by changing parcel_id, then retire any consent parcel left empty (flag: Consent parcel with no permission).'),
+    ('GeoDirectory', 'Each quarter, rerun the build with the new GeoDirectory extract. A scheme whose new built addresses reach 95% of its units moves to Complete (status_source says so); other differences are listed on the GeoDirectory checks sheet for a person to confirm.'),
+    ('Retiring a parcel', 'Do not delete. parcel_status turns to Built out when every counted home is complete and no council capacity is left; filter Built out parcels off the map. Their homes stay in the delivery record.'),
     ('Checks', 'Summary sheet checks must all be zero before figures are reported. Red cells on Permissions (check column) and Parcels (flag) show what to fix.'),
 ]
 for i, (k, v) in enumerate(steps, 1):
@@ -230,6 +239,33 @@ for i, (k, v) in enumerate(steps, 1):
     x.font = Font(name=F, size=10)
     x.alignment = Alignment(wrap_text=True, vertical='top')
     H.cell(row=i, column=1).alignment = Alignment(vertical='top', wrap_text=True)
+GW = wb.create_sheet('GeoDirectory checks')
+GW['A1'] = 'GeoDirectory checks'
+GW['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
+ext = pp.geod_extract.iloc[0] if len(pp) else ''
+GW['A2'] = f'GeoDirectory residential addresses, extract to {ext}. Counts only; no address data is held in this workbook.'
+GW['A2'].font = Font(name=F, size=9, italic=True)
+r = 4
+GW.cell(row=r, column=1, value='1. Permissions where GeoDirectory and the recorded status differ').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+r += 1
+cols1 = ['perm_id', 'parcel_id', 'planning_ref', 'scheme', 'units', 'status_cis', 'status', 'geod_new_built', 'geod_new_undercon', 'geod_suggestion']
+hdr(GW, r, cols1)
+for row in pp[pp.geod_suggestion.ne('')].sort_values(['geod_suggestion', 'units'], ascending=[True, False])[cols1].itertuples(index=False):
+    r += 1
+    for j, v in enumerate(row, 1):
+        GW.cell(row=r, column=j, value=val(v)).font = Font(name=F, size=9)
+r += 3
+GW.cell(row=r, column=1, value='2. Clusters of new addresses (since 2019) outside every parcel').font = Font(name=F, bold=True, size=11, color='1F3A5F')
+r += 1
+cols2 = ['cluster_id', 'scope', 'relevance', 'new_addresses', 'built', 'under_construction', 'streets', 'first_created', 'last_created', 'register_applications']
+hdr(GW, r, cols2)
+if len(CL):
+    for row in CL.sort_values(['relevance', 'new_addresses'], ascending=[False, False])[cols2].itertuples(index=False):
+        r += 1
+        for j, v in enumerate(row, 1):
+            GW.cell(row=r, column=j, value=val(v)).font = Font(name=F, size=9)
+for j, w in enumerate([11, 16, 40, 36, 8, 18, 18, 10, 10, 30], 1):
+    GW.column_dimensions[L(j)].width = w
 DD = wb.create_sheet('Data dictionary')
 import pyogrio
 dd = pyogrio.read_dataframe('Limerick_Housing_Land_Register.gpkg', layer='data_dictionary')

@@ -29,3 +29,14 @@ Run from the study folder after `supply/build_supply_gpkg.py` and `supply/supply
 `python build_land_register.py && python build_register_xlsx.py`
 
 Consent parcels use the planning application boundary where one exists (240 of 265 schemes). The rest get a 25 m circle round the scheme point, flagged in `notes`. The `developable_area_ha` field is the council's net area on audit parcels; `mapped_area_ha` is the polygon as drawn.
+
+## GeoDirectory: completions and built-out parcels
+
+With a GeoDirectory residential address extract at `in_geodir/limerick_geod_residential_points.gpkg` (licensed; not committed), the build counts new addresses (created on or after the application was received) inside each permission boundary, kept within its parcel. Each address is credited to one permission only.
+
+- A scheme with built addresses for 95% or more of its units moves to Complete. `status_cis` keeps the CIS status and `status_source` records the extract date. Its delivery-year estimates are zeroed.
+- Other differences (new addresses on a scheme recorded as not started, fewer addresses than units on a completed scheme, none found) go to `register_checks` and the GeoDirectory checks sheet for a person to confirm.
+- `parcel_status` is calculated: Built out when every counted home is complete and no council capacity is left. Built-out parcels stay in the register as delivery history; future supply is zero. Filter them off the map rather than deleting.
+- `geod_new_build_outside_parcels` lists clusters of 10+ new addresses (since 2019) outside every parcel, with any granted applications on the land. Recent or active ones point to permissions the register is missing.
+
+Rerun the build with each new extract (quarterly).

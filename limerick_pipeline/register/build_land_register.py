@@ -21,6 +21,9 @@ SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
 XL = 'Limerick_Housing_Land_Register.xlsx'
 AS_AT = '2026-10-11'
+GEOD = 'in_geodir/limerick_geod_residential_points.gpkg'   # GeoDirectory residential address points (licensed; not committed)
+COMPLETE_SHARE = 0.95         # new built addresses / permitted units at which a scheme is treated as complete
+CLUSTER_MIN = 10              # new-build address clusters outside every parcel worth checking
 POINT_BUFFER_M = 25           # parcels for consents with no planning boundary: circle round the scheme point
 MERGE_SHARE = 0.2             # consent parcels overlapping by this share of the smaller one are the same land
 YEARS = ['Q4 2026', '2027', '2028', '2029', '2030', '2031+']
@@ -152,6 +155,52 @@ pp['notes'] = ''
 assert pp.perm_id.is_unique and pp.status.notna().all()
 YC = [c for c in pp.columns if c.startswith('est_') and c not in ('est_start', 'est_last_completions')]
 
+# ------------------------------------------------------------------ GeoDirectory: homes on the ground
+# New residential addresses (created on or after the application was received) inside each permission's boundary,
+# kept within its parcel. Each address is credited to one permission only: on a parcel with several permissions the
+# earliest-started takes addresses up to its unit count, then the next. Status is moved to Complete only where built
+# addresses reach COMPLETE_SHARE of units; anything else is a suggestion for a person to confirm.
+pp['status_cis'] = pp.status
+pp['status_source'] = 'CIS / building control'
+for c in ['geod_new_built', 'geod_new_undercon']:
+    pp[c] = 0
+pp['geod_extract'] = ''
+pp['geod_suggestion'] = ''
+GD = None
+if os.path.exists(GEOD):
+    GD = gpd.read_file(GEOD).to_crs(ITM)
+    GD['created'] = pd.to_datetime(GD.create_dat, dayfirst=True, errors='coerce')
+    GD = GD[GD.demolished.ne('Y') & GD.invalid.ne('Y')]
+    extract = GD.created.max().strftime('%Y-%m-%d')
+    pp['geod_extract'] = extract
+    pgeom = parcels.set_index('parcel_id').geometry
+    rec = P.set_index('perm_id').received
+    for parcel_id, grp in pp[pp.counts_toward_totals.eq('Yes')].groupby('parcel_id'):
+        used = set()
+        grp = grp.assign(_o=pd.to_datetime(grp.start_on_site).fillna(pd.to_datetime(grp.final_grant))).sort_values('_o')
+        for i, r in grp.iterrows():
+            g = PB.loc[r.perm_id, 'geometry'] if r.perm_id in PB.index else P.set_index('perm_id').geometry[r.perm_id].buffer(POINT_BUFFER_M)
+            g = g.buffer(5).intersection(pgeom[parcel_id].buffer(5))
+            since = pd.to_datetime(rec[r.perm_id]) if pd.notna(rec[r.perm_id]) else pd.Timestamp('2017-01-01')
+            a = GD[(GD.created >= since) & GD.within(g) & ~GD.index.isin(used)]
+            built, uc = a[a.under_cons.ne('Y')], a[a.under_cons.eq('Y')]
+            nb = min(len(built), int(r.units)) if r.units else len(built)
+            nu = min(len(uc), max(int(r.units) - nb, 0)) if r.units else len(uc)
+            used |= set(built.index[:nb]) | set(uc.index[:nu])
+            pp.at[i, 'geod_new_built'], pp.at[i, 'geod_new_undercon'] = nb, nu
+    u = pp.units.replace(0, np.nan)
+    full = (pp.geod_new_built >= COMPLETE_SHARE * u) & pp.units.gt(0)
+    some = (pp.geod_new_built + pp.geod_new_undercon) > 0
+    pp.loc[full & pp.status.ne('Complete'), 'geod_suggestion'] = 'Complete – applied'
+    pp.loc[~full & some & pp.status.isin(['Permitted – not started', 'Stalled', 'Expired – not started']), 'geod_suggestion'] = 'Under construction – check'
+    pp.loc[~some & pp.status.eq('Complete'), 'geod_suggestion'] = 'No new addresses found – check location'
+    pp.loc[pp.status.eq('Complete') & some & ~full, 'geod_suggestion'] = 'Fewer addresses than units – check'
+    app = pp.geod_suggestion.eq('Complete – applied')
+    pp.loc[app, 'status'] = 'Complete'
+    pp.loc[app, 'status_source'] = f'GeoDirectory {extract}'
+    pp.loc[app, YC] = 0.0
+    print('GeoDirectory', extract, pp.geod_suggestion.value_counts().to_dict(), 'units moved to Complete', pp.loc[app, 'units'].sum())
+
 # consent-only parcels: capacity = consented units on them
 cons_units = pp[pp.status.isin(LIVE)].groupby('parcel_id').units.sum()
 m = parcels.parcel_source.eq('Planning consent – not in council audit')
@@ -172,6 +221,8 @@ def summary(parcels, pp):
     t['total_supply_units'] = t.consented_units + t.unconsented_capacity
     t['future_supply_units'] = t.total_supply_units - t.complete_units
     t['permissions'] = c.groupby('parcel_id').size().reindex(t.index).fillna(0).astype(int)
+    t['parcel_status'] = np.select([(t.consented_units > 0) & (t.complete_units >= t.consented_units) & (t.unconsented_capacity == 0),
+                                    t.complete_units > 0, t.consented_units > 0], ['Built out', 'Partly built', 'Consented – not built'], 'No consent')
     return t
 T = summary(parcels, pp)
 print(parcels.parcel_source.value_counts().to_dict())
@@ -224,6 +275,10 @@ DICT = [
     ('parcel_permissions', 'relationship', 'How the permission relates to others on the land (primary, additional phase, additional application, replaces earlier, extension of duration).'),
     ('parcel_permissions', 'est_start / est_last_completions / confidence / est_*', 'Estimated delivery years (method on the dashboard Assumptions sheet). Update when programmes are known.'),
     ('parcel_permissions', 'match_basis', 'Within site (boundary or point on an audit parcel); Mostly on audit parcel; Own consent parcel.'),
+    ('parcel_permissions', 'status_cis / status_source', 'Status as CIS and building control give it, and where the current status comes from. GeoDirectory moves a scheme to Complete when new built addresses reach 95% of its units.'),
+    ('parcel_permissions', 'geod_new_built / geod_new_undercon', 'GeoDirectory residential addresses created since the application was received, inside the permission boundary and its parcel: built / flagged under construction. Each address credited to one permission.'),
+    ('parcel_permissions', 'geod_extract / geod_suggestion', 'Date of the latest address in the GeoDirectory extract used, and what it suggests (applied, or check).'),
+    ('parcel_summary', 'parcel_status', 'Built out (every counted home complete and no unconsented capacity left), Partly built, Consented – not built, No consent. Built out parcels stay in the register as delivery history; future supply is zero.'),
     ('parcel_summary', 'consented_units', 'Complete + under construction + permitted not started + stalled, from parcel_permissions where counts_toward_totals = Yes.'),
     ('parcel_summary', 'unconsented_capacity', 'Council capacity minus consented units, not below zero. Zero on consent parcels.'),
     ('parcel_summary', 'total_supply_units', 'Consented units + unconsented capacity. Sums across parcels with no double counting.'),
@@ -231,6 +286,8 @@ DICT = [
     ('rules', 'One permission, one parcel', 'Each permission row has exactly one parcel_id; parcels never overlap; totals are calculated, not typed.'),
     ('rules', 'New permission', 'Add a row to parcel_permissions. If it is on an existing parcel, use that parcel_id. If not, draw a parcel from the planning boundary (clipped to exclude existing parcels) with id PC-<ref>.'),
     ('rules', 'Amendment / repeat / extension', 'Add the row with counts_toward_totals = No unless it replaces the counted permission, in which case switch the old row to No and the new row to Yes.'),
+    ('rules', 'GeoDirectory refresh', 'Each quarter: rerun the build with the new extract. Schemes reaching 95% built addresses move to Complete; partial ones and mismatches show in register_checks for a person to confirm.'),
+    ('rules', 'Retiring a parcel', 'Do not delete. A parcel is Built out when all its counted homes are complete and no council capacity is left; filter it off the map. Delete only a parcel created in error.'),
     ('rules', 'Refused / withdrawn', 'Do not add to parcel_permissions. Record land interest in notes if useful.'),
 ]
 pyogrio.write_dataframe(pd.DataFrame(DICT, columns=['table', 'field', 'meaning']), OUT, layer='data_dictionary', driver='GPKG')
@@ -251,6 +308,9 @@ con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c i
   {cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - {s('Complete')} AS future_supply_units,
   {' , '.join(f"COALESCE(SUM(pp.{c}), 0) AS {c}" for c in YC)},
   COUNT(pp.perm_id) AS permissions,
+  CASE WHEN {cons_sql} > 0 AND {s('Complete')} >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Built out'
+       WHEN {s('Complete')} > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
+  COALESCE(SUM(pp.geod_new_built), 0) AS geod_new_built, COALESCE(SUM(pp.geod_new_undercon), 0) AS geod_new_undercon,
   CASE WHEN p.council_capacity_units IS NOT NULL AND {cons_sql} > 1.1 * p.council_capacity_units THEN 'Consented above capacity' ELSE '' END AS flag
 FROM parcels p LEFT JOIN parcel_permissions pp ON pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes'
 GROUP BY p.fid""")
@@ -264,6 +324,8 @@ con.execute("""CREATE VIEW register_checks AS
     WHERE counts_toward_totals = 'Yes' AND planning_ref <> '' GROUP BY planning_ref HAVING COUNT(*) > 1
   UNION ALL SELECT 'Duplicate perm_id', perm_id, COUNT(*) FROM parcel_permissions GROUP BY perm_id HAVING COUNT(*) > 1
   UNION ALL SELECT 'Duplicate parcel_id', parcel_id, COUNT(*) FROM parcels GROUP BY parcel_id HAVING COUNT(*) > 1
+  UNION ALL SELECT 'GeoDirectory: ' || geod_suggestion, perm_id, parcel_id FROM parcel_permissions
+    WHERE geod_suggestion <> '' AND geod_suggestion NOT LIKE '%applied'
   UNION ALL SELECT 'Consent parcel with no counted permission', p.parcel_id, '' FROM parcels p
     WHERE p.parcel_source LIKE 'Planning consent%' AND NOT EXISTS (SELECT 1 FROM parcel_permissions pp WHERE pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes')""")
 con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier) VALUES ('register_checks', 'attributes', 'register_checks')")
@@ -272,4 +334,36 @@ chk = con.execute('SELECT problem, COUNT(*) FROM register_checks GROUP BY proble
 v = con.execute('SELECT SUM(consented_units), SUM(unconsented_capacity), SUM(total_supply_units), COUNT(*) FROM parcel_summary').fetchone()
 con.close()
 print('checks', chk, 'view totals', v)
-pd.to_pickle({'parcels': parcels, 'pp': pp, 'T': T, 'YC': YC}, 'land_register.pkl')
+# ------------------------------------------------------------------ GeoDirectory new-build clusters outside every parcel
+# Homes being built or recently built where the register has no parcel: a permission we are missing, a scheme
+# under the CIS threshold, or one-off houses. Clusters of CLUSTER_MIN+ new addresses (created since 2019).
+CL = gpd.GeoDataFrame(columns=['cluster_id', 'new_addresses', 'built', 'under_construction', 'streets', 'first_created',
+                               'last_created', 'register_applications', 'geometry'], geometry='geometry', crs=ITM)
+if GD is not None:
+    allp = unary_union(list(parcels.geometry)).buffer(5)
+    nw = GD[(GD.created >= '2019-01-01') & ~GD.within(allp)]
+    blobs = gpd.GeoDataFrame(geometry=list(unary_union(list(nw.buffer(30))).geoms) if len(nw) else [], crs=ITM)
+    nw = gpd.sjoin(nw, blobs.reset_index(names='blob'), predicate='within')
+    SITES = gpd.read_file('in_pp_full/sites.gpkg').to_crs(ITM)
+    SITES['ref'] = SITES.ApplicationNumber.astype(str)
+    SITES['u'] = pd.to_numeric(SITES.NumResidentialUnits, errors='coerce').fillna(0)
+    rows = []
+    for b_, g in nw.groupby('blob'):
+        if len(g) < CLUSTER_MIN:
+            continue
+        hull = g.unary_union.convex_hull.buffer(10)
+        apps = SITES[SITES.intersects(hull) & SITES.u.ge(2) & SITES.Decision.isin(['CONDITIONAL', 'UNCONDITIONAL'])]
+        rows.append(dict(new_addresses=len(g), built=int(g.under_cons.ne('Y').sum()), under_construction=int(g.under_cons.eq('Y').sum()),
+                         streets=', '.join(g.thoroughfa.fillna('').value_counts().index[:3]), first_created=g.created.min().strftime('%Y-%m-%d'),
+                         last_created=g.created.max().strftime('%Y-%m-%d'),
+                         register_applications=', '.join(f'{r.ref} ({int(r.u)})' for r in apps.sort_values('u', ascending=False).itertuples())[:250],
+                         geometry=hull))
+    if rows:
+        CL = gpd.GeoDataFrame(rows, crs=ITM).sort_values('new_addresses', ascending=False).reset_index(drop=True)
+        CL.insert(0, 'cluster_id', [f'GD-{i + 1:03d}' for i in range(len(CL))])
+        CL['scope'] = np.where(where(CL.geometry, NBH, 'nbhd').notna().values, 'City', 'County')
+        CL['relevance'] = np.where((CL.under_construction > 0) | (CL.last_created >= '2024-01-01'),
+                                   'Recent or active build – check for a missing permission', 'Built before the tracker window – history only')
+    CL.to_file(OUT, layer='geod_new_build_outside_parcels', driver='GPKG')
+    print('new-build clusters outside parcels:', len(CL), 'addresses', int(CL.new_addresses.sum()) if len(CL) else 0)
+pd.to_pickle({'parcels': parcels, 'pp': pp, 'T': T, 'YC': YC, 'CL': CL}, 'land_register.pkl')

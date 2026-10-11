@@ -33,3 +33,9 @@ Rebuild: run `build_supply_gpkg.py` from the folder holding the study inputs (de
 ## CSO reconciliation
 
 `cso_recon.py` compares CSO BHQ17 (units for which permission granted, Limerick; `inputs/CSO_BHQ17_Limerick.csv`) with granted residential applications in the planning register, split into single dwellings, 2–9 unit schemes, 10+ amendments, other 10+ and schemes in the tracker. Run it before `supply_dashboard.py`. The dashboard's `CSO reconciliation` sheet adds a yearly allowance for one-off houses (CSO 2023–2025 average) and 2–9 unit schemes outside the tracker (register 2023–2025 average), multiplied by an editable build-out share (default 73%, from the delivery study's 1–9 unit band).
+
+## Planning application boundaries
+
+`pull_sites.py` downloads Limerick's polygons from the national Planning Application Sites layer (IrishPlanningApplications FeatureServer, layer 1) to `in_pp_full/sites.gpkg`; 12,833 polygons on 11/10/2026. The copy supplied in October 2026 (`planning_permission_sitesOct26.gpkg`, 9,735 polygons) is the same data but stops at sites of about 0.5 ha, so it holds none of the schemes of 50+ units; use the full pull.
+
+Permissions are joined to boundaries by planning reference (SHDs through the council's yy + ABP case number copy): 240 of 265 schemes, 10,805 of 11,074 units. The `permission_boundaries` layer holds those polygons with units per hectare. Site matching uses them: within a site when at least half the boundary is on an audit site or the boundary covers at least half the site; partly on (check) at 10–50%; otherwise off register. The 25 schemes with no boundary (mostly CIS Part 8s without a council file number) keep the point method.

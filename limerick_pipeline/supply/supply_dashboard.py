@@ -15,7 +15,7 @@ OUT = 'Limerick_Housing_Supply_Dashboard.xlsx'
 T0 = pd.Timestamp('2026-10-08')
 YEARS = ['Q4 2026', '2027', '2028', '2029', '2030', '2031+']
 YBOUND = [(2026.0, 2027.0), (2027.0, 2028.0), (2028.0, 2029.0), (2029.0, 2030.0), (2030.0, 2031.0), (2031.0, 9999.0)]
-LOC = ['Audit land – within site', 'Audit land – edge (check)', 'City – outside audit land', 'County – audit not yet supplied']
+LOC = ['Audit land – within site', 'Audit land – partly on / edge (check)', 'City – outside audit land', 'County – audit not yet supplied']
 SECT = ['Private', 'Public – local authority', 'Public – AHB', 'Public – LDA']
 CONSENTED = ['Complete', 'Under construction', 'Not started – permission live', 'Stalled (CIS)']
 STATUS = ['Complete', 'Under construction', 'Not started – permission live', 'Stalled (CIS)', 'Not started – past expiry', 'In planning']
@@ -36,7 +36,7 @@ for b, g in done.groupby('size_band'):
 allp = dict(g2s=P.grant_to_start_yrs.median(), dur=P.start_to_complete_yrs.median(), rate=P.build_rate_dpa[P.build_rate_dpa > 0].median())
 par['Unknown'] = {**allp, 'n_g2s': P.grant_to_start_yrs.notna().sum(), 'n_dur': P.start_to_complete_yrs.notna().sum()}
 
-LOCMAP = {'Within site': LOC[0], 'Edge (≤50 m) – check': LOC[1], 'Off register': LOC[2], 'Not assessed (county sites pending)': LOC[3]}
+LOCMAP = {'Within site': LOC[0], 'Edge (≤50 m) – check': LOC[1], 'Partly on site – check': LOC[1], 'Off register': LOC[2], 'Not assessed (county sites pending)': LOC[3]}
 SECTMAP = {'Private': SECT[0], 'Local authority': SECT[1], 'Approved housing body': SECT[2], 'Land Development Agency': SECT[3]}
 P['location'] = P.site_match.map(LOCMAP)
 P['sector'] = P.delivery_body.map(SECTMAP).fillna('Private')
@@ -304,7 +304,7 @@ kpis = [
     ('Consented on audit land (within sites)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[0]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('Share of capacity consented', '=B8/B7', '0%'),
     ('Residual capacity (sum of sites)', f'=SUM({SR("residual_capacity")})', '#,##0'),
-    ('Consented on edge of audit sites (check)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[1]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
+    ('Consented partly on / at edge of audit sites (check)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[1]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('Consented in city outside audit land', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[2]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('Consented in county (audit pending)', f'=SUMIFS({PR("Units")},{PR("Location")},"{LOC[3]}",{PR("Status")},"<>Not started – past expiry",{PR("Status")},"<>In planning")', '#,##0'),
     ('All consented units', '=B8+B11+B12+B13', '#,##0'),
@@ -320,7 +320,7 @@ for k, f, fmt in kpis:
     r += 1
 D.cell(row=r, column=1, value='* PBSA schemes are counted in the unit totals by their recorded units (cluster apartments), not bedspaces. See Breakdowns.').font = Font(name=F, size=8, italic=True)
 r += 1
-assert D['A7'].value.startswith('Estimated') and D['A8'].value.startswith('Consented on audit') and D['A11'].value.startswith('Consented on edge')
+assert D['A7'].value.startswith('Estimated') and D['A8'].value.startswith('Consented on audit') and D['A11'].value.startswith('Consented partly')
 r += 1
 
 # table 1: land and capacity by landowner
@@ -363,7 +363,7 @@ r += 2
 # table 3: consents by sector and location
 D.cell(row=r, column=1, value='3. Consented units by sector and location').font = Font(name=F, bold=True, size=11, color='1F3A5F')
 r += 1
-hdr(D, r, ['Sector', 'Audit land – within site', 'Audit land – edge', 'City – outside audit land', 'County', 'Total', 'Share'])
+hdr(D, r, ['Sector', 'Audit land – within site', 'Audit land – partly / edge', 'City – outside audit land', 'County', 'Total', 'Share'])
 r += 1
 t3 = r
 for s_ in SECT:
@@ -516,7 +516,7 @@ B['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
 r = 3
 B.cell(row=r, column=1, value='City neighbourhoods: audit land, capacity and consents').font = Font(name=F, bold=True, size=11, color='1F3A5F')
 r += 1
-hdr(B, r, ['Neighbourhood', 'Audit sites', 'Area (ha)', 'Capacity', 'Consented within sites', 'Residual', 'Consented, edge', 'Consented outside audit land', 'All consented'])
+hdr(B, r, ['Neighbourhood', 'Audit sites', 'Area (ha)', 'Capacity', 'Consented within sites', 'Residual', 'Consented, partly / edge', 'Consented outside audit land', 'All consented'])
 r += 1
 b1 = r
 for nb in sorted(sites.neighbourhood.dropna().unique()):
@@ -538,7 +538,7 @@ r += 2
 
 B.cell(row=r, column=1, value='Consented units by tenure and location').font = Font(name=F, bold=True, size=11, color='1F3A5F')
 r += 1
-hdr(B, r, ['Tenure', 'Audit land – within site', 'Audit land – edge', 'City – outside audit land', 'County', 'Total'])
+hdr(B, r, ['Tenure', 'Audit land – within site', 'Audit land – partly / edge', 'City – outside audit land', 'County', 'Total'])
 r += 1
 b2 = r
 for tn in ['Market (incl. Part V)', 'Social', 'Affordable / cost rental', 'Student (PBSA)']:
@@ -594,7 +594,7 @@ text = [
     ('Audit land', 'Council city sites audit (in_sca/sca.gpkg): sites drawn twice under one reference merged; rsca 2 and 112 reinstated (removed in the council’s 04/12/25 review with no reason recorded; checked as still developable); rsca 35 reinstated (removed because it already had Part 8 approval 19/8004, unlike the 28 permitted sites the council kept). County audit not yet supplied.'),
     ('Capacity', 'The council’s estimate per site (area × density band). Not a design-led figure. rsca 112 has a narrow, irregular shape, so its capacity is likely an upper figure.'),
     ('Permissions', 'Counted residential schemes from the pipeline tracker after primacy rules (no double counting of amendments, repeats or superseded applications), plus register-only Part 8s, KPMG additions and granted PBSA. PBSA counted in the units recorded for the scheme (cluster apartments); bedspaces are shown separately and are not added to unit totals.'),
-    ('Location', 'Within site = scheme point inside an audit polygon. Edge = within 50 m of a site, not inside (point precision; check against the site boundary). City – outside audit land = more than 50 m from any audit site. County = outside the city audit area; cannot be assessed until the county audit is supplied. Scheme points come from the planning register where available.'),
+    ('Location', 'Matched on the planning application boundary (national Planning Application Sites layer, joined by planning reference; SHDs via the council\u2019s yy + case number copy) for 240 of 265 schemes. Within site = at least half the boundary on an audit site, or the boundary covers at least half the site (red lines often take in access roads). Partly on = 10\u201350% overlap; check. Schemes with no boundary (mostly CIS Part 8s without a council file number) use the scheme point: inside a site, within 50 m (edge, check) or further. City \u2013 outside audit land = no meaningful overlap with any audit site. County = outside the city audit area; cannot be assessed until the county audit is supplied.'),
     ('Consented', 'Complete + under construction + permitted not started (live) + stalled. Expired permissions and applications still in planning are shown separately and not counted as consent.'),
     ('Sector', 'Private; Public – local authority (incl. Part 8 and council own-build); Public – AHB; Public – LDA. From the tracker’s owner classification.'),
     ('Delivery year: on site', 'Build period = the larger of (a) the median start-to-completion time for the scheme’s size band and (b) units ÷ median build rate for the band. First homes complete a year after start, or halfway through the build if shorter. Units are spread evenly from then until the end of the build, counting only time after 08/10/2026. Schemes past their estimated finish, or within a year of it, have their units spread over the next 12 months.'),

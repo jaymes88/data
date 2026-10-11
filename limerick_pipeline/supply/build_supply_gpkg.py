@@ -18,6 +18,8 @@ from shapely.geometry import shape
 OUT = 'Limerick_Housing_Supply.gpkg'
 ITM = 2157
 EDGE_M = 50
+PP_SITES = 'in_pp_full/sites.gpkg'   # national Planning Application Sites layer, Limerick (pull_sites.py)
+MIN_WITHIN, MIN_PART = 0.5, 0.1      # within: >=50% of the boundary on the site or >=50% of the site covered; partly: >=10%
 if os.path.exists(OUT):
     os.remove(OUT)
 
@@ -117,35 +119,86 @@ P['supply_type'] = np.where(txt.str.contains(r'change of use|conversion|convert|
 P['delivery_mode'] = np.where(P.sh_mode.eq('Turnkey'), 'Turnkey purchase', np.where(P.delivery_body.eq('Private'), 'Private development', 'Direct build / own scheme'))
 pts = gpd.GeoDataFrame(P, geometry=gpd.points_from_xy(P.lon, P.lat), crs=4326).to_crs(ITM)
 
-# link to council sites: within, edge (<= 50m, point precision), off register; county = not yet assessed
+# link to council sites. Planning application boundaries (national Planning Application Sites layer) where the
+# scheme's reference has one: share of the boundary inside a council site decides the match. Otherwise the point:
+# within, edge (<= 50 m, point precision) or off register. County = not yet assessed.
 city_mask = ~pts.nbhd.isin(['Outside city neighbourhoods', 'Unknown'])
-j = gpd.sjoin(pts[['geometry']], sites[['site_id', 'geometry']], how='left', predicate='within')
+BND = gpd.read_file(PP_SITES).to_crs(ITM)
+BND['ref'] = BND.ApplicationNumber.astype(str).str.strip()
+BND = BND.dissolve(by='ref', as_index=False)[['ref', 'geometry']]
+bshd = {r[-6:]: r for r in BND.ref if len(r) == 8 and r[2] == '3'}          # SHDs filed in the council register as yy + ABP case no.
+bset = set(BND.ref)
+def bref(r):
+    for k in (r.register_ref, r.ref):
+        k = str(k or '').strip()
+        if k.startswith('ABPREF') and k[6:] in bshd:
+            return bshd[k[6:]]
+        if k in bset:
+            return k
+    return None
+pts['boundary_ref'] = [bref(r) for _, r in pts.iterrows()]
+bgeom = dict(zip(BND.ref, BND.geometry))
+pts['site_id'] = None
+pts['site_match'] = None
+pts['site_overlap_share'] = np.nan
+pts['site_covered_share'] = np.nan
+for i, r in pts[pts.boundary_ref.notna()].iterrows():
+    g = bgeom[r.boundary_ref]
+    ov = sites[sites.intersects(g)]
+    if len(ov):
+        inter = ov.geometry.intersection(g).area
+        sh = inter / g.area                                   # share of the permission boundary on the site
+        cov = inter / ov.geometry.area                        # share of the site covered by the permission
+        score = np.maximum(sh, cov)                           # red lines often take in access roads beyond the site
+        k = score.idxmax()
+        pts.at[i, 'site_overlap_share'] = round(float(sh[k]), 3)
+        pts.at[i, 'site_covered_share'] = round(float(cov[k]), 3)
+        if score.max() >= MIN_WITHIN:
+            pts.at[i, 'site_id'], pts.at[i, 'site_match'] = ov.at[k, 'site_id'], 'Within site'
+        elif sh.max() >= MIN_PART:
+            pts.at[i, 'site_id'], pts.at[i, 'site_match'] = ov.at[k, 'site_id'], 'Partly on site – check'
+    else:
+        pts.at[i, 'site_overlap_share'] = 0.0
+pts['dist_to_site_m'] = np.nan
+hasb = pts.boundary_ref.notna()
+pts.loc[hasb, 'dist_to_site_m'] = [round(float(sites.distance(bgeom[b]).min()), 0) for b in pts.loc[hasb, 'boundary_ref']]
+# points only where no boundary exists
+nob = ~hasb
+j = gpd.sjoin(pts.loc[nob, ['geometry']], sites[['site_id', 'geometry']], how='left', predicate='within')
 j = j[~j.index.duplicated()]
-pts['site_id'] = j.site_id
-pts['site_match'] = np.where(pts.site_id.notna(), 'Within site', None)
-need = pts.site_id.isna()
-dists = pts[need].geometry.apply(lambda g: sites.distance(g))
-near_id = dists.idxmin(axis=1).map(sites.site_id)
-near_d = dists.min(axis=1)
-pts.loc[need, 'dist_to_site_m'] = near_d.round(0)
-edge = need & pts.index.isin(near_d[near_d <= EDGE_M].index)
-pts.loc[edge, 'site_id'] = near_id[near_d <= EDGE_M]
-pts.loc[edge, 'site_match'] = f'Edge (≤{EDGE_M} m) – check'
+pts.loc[nob, 'site_id'] = j.site_id
+pts.loc[nob & pts.site_id.notna(), 'site_match'] = 'Within site'
+need = nob & pts.site_id.isna()
+if need.any():
+    dists = pts[need].geometry.apply(lambda g: sites.distance(g))
+    near_id = dists.idxmin(axis=1).map(sites.site_id)
+    near_d = dists.min(axis=1)
+    pts.loc[need, 'dist_to_site_m'] = near_d.round(0)
+    e_ = near_d[near_d <= EDGE_M].index
+    pts.loc[e_, 'site_id'] = near_id[e_]
+    pts.loc[e_, 'site_match'] = f'Edge (≤{EDGE_M} m) – check'
 pts.loc[pts.site_match.isna() & city_mask, 'site_match'] = 'Off register'
 pts.loc[pts.site_match.isna(), 'site_match'] = 'Not assessed (county sites pending)'
-pts['on_register'] = pts.site_match.map({'Within site': 'Yes', f'Edge (≤{EDGE_M} m) – check': 'Possible', 'Off register': 'No'}).fillna('Not assessed')
-pts['location_source'] = 'Planning register / KPMG / CIS'
+pts.loc[pts.site_match.eq('Not assessed (county sites pending)'), 'site_id'] = None
+pts['on_register'] = pts.site_match.map({'Within site': 'Yes', 'Partly on site – check': 'Possible', f'Edge (≤{EDGE_M} m) – check': 'Possible', 'Off register': 'No'}).fillna('Not assessed')
+pts['location_source'] = np.where(hasb, 'Planning application boundary', 'Point (planning register / KPMG / CIS)')
 
 perm_cols = ['perm_id', 'ref', 'register_ref', 'heading', 'units', 'student_bedspaces', 'band', 'dwelling_type', 'tenure',
              'delivery_body', 'delivery_mode', 'supply_type', 'social_units_programme', 'route', 'status', 'stage',
              'received', 'final_grant', 'expiry', 'start', 'start_source', 'completion', 'completion_source',
              'approval_yrs', 'grant_to_start_yrs', 'start_to_complete_yrs', 'build_rate_dpa',
-             'site_id', 'site_match', 'on_register', 'dist_to_site_m', 'nbhd', 'lea', 'settlement', 'source',
+             'site_id', 'site_match', 'site_overlap_share', 'site_covered_share', 'boundary_ref', 'location_source', 'on_register', 'dist_to_site_m', 'nbhd', 'lea', 'settlement', 'source',
              'relationship', 'rel_conf', 'sh_no', 'sh_programme', 'sh_stage', 'sh_quarter', 'barriers_noted']
 permissions = pts[perm_cols + ['geometry']].rename(columns={'ref': 'planning_ref', 'heading': 'scheme', 'band': 'size_band',
                                                          'nbhd': 'neighbourhood', 'sh_no': 'dept_project_no',
                                                          'sh_programme': 'dept_programme', 'sh_stage': 'dept_stage', 'sh_quarter': 'dept_quarter'})
 write(permissions, 'permissions')
+pb = permissions[permissions.boundary_ref.notna()].drop(columns='geometry').copy()
+pb = gpd.GeoDataFrame(pb[['perm_id', 'planning_ref', 'boundary_ref', 'scheme', 'units', 'status', 'tenure', 'delivery_body', 'site_id', 'site_match', 'site_overlap_share', 'site_covered_share']],
+                      geometry=[bgeom[b] for b in pb.boundary_ref], crs=ITM)
+pb['boundary_ha'] = (pb.area / 1e4).round(3)
+pb['units_per_ha'] = np.where(pb.boundary_ha > 0, (pb.units / pb.boundary_ha).round(1), np.nan)
+write(pb, 'permission_boundaries')
 
 # ------------------------------------------------------------------ applications (audit trail)
 full = __import__('sources').load_full('lp.xlsx')[['Project Id', 'Latitude', 'Longitude']]
@@ -241,13 +294,14 @@ write(gpd.GeoDataFrame(N.drop(columns=['ref', 'lat', 'lon']).rename(columns=lamb
 # ------------------------------------------------------------------ guide + views
 guide = pd.DataFrame([
     ('sites', 'Layer', 'Council land register sites (city). County sites to be added with scope = County.', 'site_id'),
+    ('permission_boundaries', 'Layer', 'Planning application boundary for each permission that has one (national Planning Application Sites layer, matched by reference). Drives site matching.', 'perm_id'),
     ('permissions', 'Layer', 'One row per counted residential scheme. Tenure, delivery body and supply type are fields – filter or style on them rather than splitting layers.', 'perm_id'),
     ('applications', 'Layer', 'Every application including superseded, refused, duplicate and not-counted records. Audit trail for permissions.', 'planning_ref'),
     ('programmes', 'Table', 'Delivery programme records (DHLGH social housing report, LDA, PBSA) linked to permissions by perm_id where a confident match exists.', 'programme_id -> perm_id'),
     ('non_new_supply', 'Table', 'Buy & Renew and remedial works from the DHLGH report. Existing homes – not part of the pipeline.', 'programme_id'),
     ('site_reconciliation', 'Table', 'Per council site: capacity, complete, under construction, permitted not started, expired, in planning, residual. Join to sites on site_id.', 'site_id'),
     ('off_register_permissions', 'View', 'Permissions in the city not on a council site (site_match = Off register).', 'perm_id'),
-    ('edge_match_permissions', 'View', f'Permissions within {EDGE_M} m of a council site but not inside it – point precision; resolve with planning boundaries.', 'perm_id'),
+    ('edge_match_permissions', 'View', f'Permissions to check: boundary 10–50% inside a council site, or (no boundary) point within {EDGE_M} m of one.', 'perm_id'),
     ('ref_*', 'Layers', 'Reference only: neighbourhoods, EDs, LEAs, LDA public land, KPMG audit polygons, register leads not in CIS.', ''),
 ], columns=['layer', 'type', 'description', 'key'])
 table(guide, 'layer_guide')
@@ -255,7 +309,7 @@ table(guide, 'layer_guide')
 con = sqlite3.connect(OUT)
 cols = [r[1] for r in con.execute('PRAGMA table_info(permissions)')]
 gcol = con.execute("SELECT column_name, geometry_type_name, srs_id FROM gpkg_geometry_columns WHERE table_name='permissions'").fetchone()
-for view, where in [('off_register_permissions', "site_match = 'Off register'"), ('edge_match_permissions', "site_match LIKE 'Edge%'")]:
+for view, where in [('off_register_permissions', "site_match = 'Off register'"), ('edge_match_permissions', "site_match LIKE 'Edge%' OR site_match LIKE 'Partly%'")]:
     con.execute(f'CREATE VIEW {view} AS SELECT {", ".join(cols)} FROM permissions WHERE {where}')
     con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES (?, 'features', ?, ?)", (view, view, gcol[2]))
     con.execute('INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m) VALUES (?, ?, ?, ?, 0, 0)', (view, gcol[0], gcol[1], gcol[2]))

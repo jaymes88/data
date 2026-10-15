@@ -40,3 +40,14 @@ With a GeoDirectory residential address extract at `in_geodir/limerick_geod_resi
 - `geod_new_build_outside_parcels` lists clusters of 10+ new addresses (since 2019) outside every parcel, with any granted applications on the land. Recent or active ones point to permissions the register is missing.
 
 Rerun the build with each new extract (quarterly).
+
+## Zoned land without consent (interim, until the county audit)
+
+`pull_zoning.py` downloads Limerick's current zoning (national generalised zoning types, GZT) and the Residential Zoned Land Tax draft map 2027 to `in_zoning/`. The build adds parcels with source "Zoned land – no consent (estimate)" for new residential zoning (R1, plus R3 zones described as new residential, residential development area or serviced sites). It only uses zoning that isn't already in another parcel and isn't built on: existing GeoDirectory homes plus 15 m are cut out, and pieces under 0.1 ha are dropped. Mixed-use and town-centre zoning are not included. Phase 2 zoning is included and flagged.
+
+Capacity = mapped area × developable share × density:
+- **Developable share:** 0.91, the council city audit's developable area divided by its mapped area.
+- **Density:** the median homes per hectare of permitted Limerick schemes of 10+ homes, measured over the planning boundary. That gives 25 in county towns and villages, 34 in city suburbs and 101 in the city centre (six schemes only). Serviced-site zoning uses the lower quartile of county schemes, 19.
+- Each parcel's `density_basis` field states its figure and source. These figures are recalculated from the data on each build.
+
+`rzlt_2027_share` records how much of each parcel is on the RZLT map. Parcels also carry GeoDirectory address counts (`geod_addresses_now`, `geod_new_since_2019`), so building on zoned land without a linked permission shows up on refresh.

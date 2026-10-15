@@ -21,6 +21,10 @@ SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
 XL = 'Limerick_Housing_Land_Register.xlsx'
 AS_AT = '2026-10-11'
+ZONING = 'in_zoning/gzt.gpkg'          # national generalised zoning (GZT), current Limerick plans (pull_zoning.py)
+RZLT = 'in_zoning/rzlt2027.gpkg'       # residential zoned land tax, annual draft map 2027
+MIN_ZONED_HA = 0.1                     # drop zoning slivers smaller than this after clipping
+HOME_BUFFER_M = 15                     # existing homes (GeoDirectory) and their curtilage clipped out of zoned land
 GEOD = 'in_geodir/limerick_geod_residential_points.gpkg'   # GeoDirectory residential address points (licensed; not committed)
 COMPLETE_SHARE = 0.95         # new built addresses / permitted units at which a scheme is treated as complete
 CLUSTER_MIN = 10              # new-build address clusters outside every parcel worth checking
@@ -113,6 +117,76 @@ for grp, g in sorted(cons.groupby('grp'), key=lambda kv: -kv[1].units.sum()):
                             + ('; was matched as ' + ', '.join(sorted(set(g.site_match))) if g.site_match.str.contains('check').any() else '')).strip('; '),
                      geometry=geom))
 C = gpd.GeoDataFrame(rows, crs=ITM)
+
+# ------------------------------------------------------------------ zoned land without consent (interim, until the county audit)
+# New residential zoning (GZT R1, and R3 zones described as new residential / residential development area / serviced sites)
+# not already in a parcel and not already built on. Capacity = mapped area x developable share x density.
+#   developable share: the council city audit's own ratio of developable to mapped area
+#   density: median homes per hectare of permitted Limerick schemes (10+ homes, planning boundary) by area type;
+#            serviced sites zoning at the lower quartile of county schemes
+PBF = PB.reset_index().merge(P[['perm_id', 'settlement', 'neighbourhood']], on='perm_id')
+PBF = PBF[(PBF.units >= 10) & (PBF.boundary_ha > 0.2)]
+PBF['tier'] = np.where(PBF.neighbourhood.eq('City Centre'), 'City centre',
+                       np.where(PBF.settlement.eq('Limerick City and Suburbs'), 'City suburbs', 'County towns and villages'))
+DENS = PBF.groupby('tier').units_per_ha.median().round(0).to_dict()
+DENS_N = PBF.groupby('tier').size().to_dict()
+DENS['Serviced sites'] = round(float(PBF[PBF.tier.eq('County towns and villages')].units_per_ha.quantile(0.25)), 0)
+aud = A[A.area_ha.notna() & (A.area_ha <= A.area / 1e4 * 1.001)]
+NET = round(float(aud.area_ha.sum() / (aud.area.sum() / 1e4)), 2)
+print('densities', DENS, 'n', DENS_N, 'net share', NET)
+Z = gpd.GeoDataFrame(columns=['geometry'], geometry='geometry', crs=ITM)
+if os.path.exists(ZONING):
+    ZG = gpd.read_file(ZONING).to_crs(ITM)
+    newres = ZG.ZONE_GZT.eq('R1') | (ZG.ZONE_GZT.eq('R3') & ZG.ZONE_ORIG.str.contains('New Residential|Development Area|Servic', case=False, na=False))
+    ZG = ZG[newres].explode(index_parts=False).reset_index(drop=True)
+    taken_all = unary_union(list(A.geometry) + list(C.geometry))
+    homes = unary_union(list(gpd.read_file(GEOD).to_crs(ITM).buffer(HOME_BUFFER_M))) if os.path.exists(GEOD) else None
+    rz = unary_union(list(gpd.read_file(RZLT).to_crs(ITM).geometry)) if os.path.exists(RZLT) else None
+    city_u = unary_union(list(NBH.geometry))
+    cc_u = unary_union(list(NBH[NBH.nbhd.eq('City Centre')].geometry))
+    zrows = []
+    for i, z in ZG.iterrows():
+        g = z.geometry.difference(taken_all)
+        if homes is not None:
+            g = g.difference(homes)
+        for part in (getattr(g, 'geoms', [g]) if not g.is_empty else []):
+            part = part.difference(taken_all)                 # zoning layers can overlap between plans
+            if part.is_empty or part.area / 1e4 < MIN_ZONED_HA:
+                continue
+            taken_all = taken_all.union(part)
+            if part.geom_type != 'Polygon':
+                part = max(getattr(part, 'geoms', [part]), key=lambda q: q.area)
+            serviced = 'servic' in str(z.ZONE_ORIG).lower()
+            pt = part.representative_point()
+            tier = 'Serviced sites' if serviced else ('City centre' if pt.within(cc_u) else 'City suburbs' if pt.within(city_u) else 'County towns and villages')
+            plan = re.sub(r' (Local Area P[Ll]an|Development Plan).*', '', str(z.PLAN_NAME))
+            zrows.append(dict(plan_name=z.PLAN_NAME, plan=plan, zone_gzt=z.ZONE_GZT, zone_orig=z.ZONE_ORIG,
+                              phase='Phase 2 – later phasing' if 'phase 2' in str(z.ZONE_ORIG).lower() else '',
+                              scope='City' if pt.within(city_u) else 'County', density_tier=tier, density_dph=DENS[tier],
+                              rzlt_2027_share=round(part.intersection(rz).area / part.area, 2) if rz is not None else np.nan,
+                              geometry=part))
+    if zrows:
+        Z = gpd.GeoDataFrame(zrows, crs=ITM)
+        Z['n'] = Z.groupby('plan').cumcount() + 1
+        Z['parcel_id'] = 'ZN-' + Z.plan.str.replace(r'[^A-Za-z]', '', regex=True).str[:12] + '-' + Z.n.astype(str).str.zfill(3)
+        Z['mapped'] = Z.area / 1e4
+        Z['area_ha'] = (Z.mapped * NET).round(3)
+        Z['capacity_units'] = (Z.area_ha * Z.density_dph).round(0)
+        Z['parcel_source'] = 'Zoned land – no consent (estimate)'
+        Z['neighbourhood'] = where(Z.geometry, NBH, 'nbhd').fillna('County').values
+        Z['local_name'] = Z.plan + ': ' + Z.zone_orig
+        Z['zoning'] = Z.zone_orig
+        Z['capacity_basis'] = 'Estimate: zoned area x developable share x density'
+        Z['density_basis'] = [f'{d:.0f} homes/ha = median of {DENS_N.get(t, 0)} permitted Limerick schemes of 10+ homes in {t.lower()} '
+                              f'(planning boundaries, gross over the red line)' if t != 'Serviced sites' else
+                              f'{d:.0f} homes/ha = lower quartile of permitted county schemes, for serviced-site (self-build) zoning'
+                              for d, t in zip(Z.density_dph, Z.density_tier)]
+        Z['density_basis'] = Z.density_basis + f'; developable share {NET:.2f} = council city audit developable area / mapped area'
+        Z['notes'] = np.where(Z.phase.ne(''), 'Phase 2 zoning: later phasing', '') 
+        for c in ['register_status', 'landowner', 'site_type', 'density_band']:
+            Z[c] = ''
+        Z['rsca'] = pd.NA
+    print('zoned parcels', len(Z), 'ha', round(Z.mapped.sum(), 1) if len(Z) else 0, 'capacity', Z.capacity_units.sum() if len(Z) else 0)
 assert P.parcel_id.notna().all()
 
 # ------------------------------------------------------------------ parcels layer (land facts only)
@@ -123,16 +197,20 @@ C_ = C[keep + ['geometry']].copy()
 C_['capacity_units'] = np.nan                                 # consent-only parcels: capacity = consented units (set below)
 C_['rsca'] = pd.NA
 C_['area_ha'] = (C_.area / 1e4).round(3)
-parcels = gpd.GeoDataFrame(pd.concat([A_, C_], ignore_index=True), crs=ITM)
+ZX = ['plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share']
+Z_ = Z[keep + ['capacity_units', 'rsca', 'area_ha'] + ZX + ['geometry']].copy() if len(Z) else None
+parcels = gpd.GeoDataFrame(pd.concat([A_, C_] + ([Z_] if Z_ is not None else []), ignore_index=True), crs=ITM)
+for c in ZX:
+    if c not in parcels:
+        parcels[c] = None
 parcels['lea'] = where(parcels.geometry, LEA, lea_col).values
 parcels['mapped_area_ha'] = (parcels.area / 1e4).round(3)
 parcels['developable_area_ha'] = parcels.area_ha
-parcels['council_capacity_units'] = parcels.capacity_units
-parcels = parcels.drop(columns='capacity_units')
 parcels['last_reviewed'] = AS_AT
 parcels['reviewed_by'] = ''
 parcels = parcels[['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type',
-                   'density_band', 'developable_area_ha', 'mapped_area_ha', 'council_capacity_units', 'capacity_basis', 'register_status', 'notes', 'last_reviewed',
+                   'density_band', 'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase',
+                   'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share', 'register_status', 'notes', 'last_reviewed',
                    'reviewed_by', 'geometry']]
 assert parcels.parcel_id.is_unique
 
@@ -172,6 +250,10 @@ if os.path.exists(GEOD):
     GD['created'] = pd.to_datetime(GD.create_dat, dayfirst=True, errors='coerce')
     GD = GD[GD.demolished.ne('Y') & GD.invalid.ne('Y')]
     extract = GD.created.max().strftime('%Y-%m-%d')
+    gj = gpd.sjoin(GD[['created', 'under_cons', 'geometry']], parcels[['parcel_id', 'geometry']], predicate='within')
+    parcels['geod_addresses_now'] = parcels.parcel_id.map(gj.groupby('parcel_id').size()).fillna(0).astype(int)
+    parcels['geod_new_since_2019'] = parcels.parcel_id.map(gj[gj.created >= '2019-01-01'].groupby('parcel_id').size()).fillna(0).astype(int)
+    parcels['geod_extract'] = extract
     pp['geod_extract'] = extract
     pgeom = parcels.set_index('parcel_id').geometry
     rec = P.set_index('perm_id').received
@@ -204,7 +286,7 @@ if os.path.exists(GEOD):
 # consent-only parcels: capacity = consented units on them
 cons_units = pp[pp.status.isin(LIVE)].groupby('parcel_id').units.sum()
 m = parcels.parcel_source.eq('Planning consent – not in council audit')
-parcels.loc[m, 'council_capacity_units'] = np.nan
+parcels.loc[m, 'capacity_units'] = np.nan
 
 
 # ------------------------------------------------------------------ summary (python copy, for checks and the workbook)
@@ -216,7 +298,7 @@ def summary(parcels, pp):
                     ('Expired – not started', 'expired_units'), ('In planning', 'in_planning_units')]:
         t[col] = c[c.status.eq(st)].groupby('parcel_id').units.sum().reindex(t.index).fillna(0)
     t['consented_units'] = t[['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units']].sum(axis=1)
-    t['capacity_used'] = t.council_capacity_units.fillna(t.consented_units)
+    t['capacity_used'] = t.capacity_units.fillna(t.consented_units)
     t['unconsented_capacity'] = (t.capacity_used - t.consented_units).clip(lower=0)
     t['total_supply_units'] = t.consented_units + t.unconsented_capacity
     t['future_supply_units'] = t.total_supply_units - t.complete_units
@@ -250,21 +332,25 @@ parcels_out.to_file(OUT, layer='parcels', driver='GPKG')
 pyogrio.write_dataframe(clean(pp), OUT, layer='parcel_permissions', driver='GPKG')
 lists = pd.DataFrame([('status', s, 'Yes' if s in LIVE else 'No') for s in ['Complete', 'Under construction', 'Permitted – not started', 'Stalled',
                                                                         'Expired – not started', 'In planning']]
-                     + [('parcel_source', s, '') for s in ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit',
+                     + [('parcel_source', s, '') for s in ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)',
                                                            'Council audit – county']]
                      + [('counts_toward_totals', s, '') for s in ['Yes', 'No']],
                      columns=['list', 'value', 'counted_as_consented'])
 pyogrio.write_dataframe(lists, OUT, layer='lookup_values', driver='GPKG')
 DICT = [
     ('parcels', 'parcel_id', 'Unique parcel key. CITY-<rsca> for council audit parcels; PC-<planning ref> for consent parcels outside the audit. Never reuse a retired id.'),
-    ('parcels', 'parcel_source', 'Council audit / Council audit – reinstated / Planning consent – not in council audit. County audit parcels: Council audit – county.'),
+    ('parcels', 'parcel_source', 'Council audit / Council audit – reinstated / Planning consent – not in council audit / Zoned land – no consent (estimate: new residential zoning outside every other parcel and not built on, until the county audit replaces it). County audit parcels: Council audit – county.'),
     ('parcels', 'scope', 'City or County.'),
     ('parcels', 'rsca', 'Council audit reference (audit parcels only).'),
-    ('parcels', 'council_capacity_units', 'Council estimate of homes the parcel can take (audit parcels). Blank on consent parcels: their capacity is the consented units.'),
+    ('parcels', 'capacity_units', 'Homes the parcel can take: council estimate on audit parcels, zoning estimate on zoned-land parcels. Blank on consent parcels: their capacity is the consented units.'),
     ('parcels', 'capacity_basis', 'How capacity is set.'),
     ('parcels', 'developable_area_ha', 'Audit parcels: the council\u2019s net developable area, the basis of its capacity estimate. Consent parcels: mapped area.'),
     ('parcels', 'mapped_area_ha', 'Area of the polygon as drawn. Larger than the developable area where the council netted off roads, open space or constrained land.'),
     ('parcels', 'register_status', 'Status in the council audit file (audit parcels).'),
+    ('parcels', 'plan_name / zone_gzt / zoning / phase', 'Zoned-land parcels: development plan or LAP, national zoning type, plan zoning name, and Phase 2 flag.'),
+    ('parcels', 'density_tier / density_dph / density_basis', 'Zoned-land parcels: area type, homes per hectare used, and where the figure comes from (Limerick permitted schemes).'),
+    ('parcels', 'rzlt_2027_share', 'Share of the parcel on the Residential Zoned Land Tax draft map 2027 (land the council considers serviced and vacant or idle).'),
+    ('parcels', 'geod_addresses_now / geod_new_since_2019 / geod_extract', 'GeoDirectory residential addresses inside the parcel now / created since 2019, and the extract date. A rise on a parcel with no permission means building without a linked consent.'),
     ('parcels', 'notes', 'Why a parcel was reinstated, matched approximately, or needs checking.'),
     ('parcels', 'last_reviewed / reviewed_by', 'Update on each review.'),
     ('parcel_permissions', 'perm_id', 'Unique permission key (CIS project id or REG-<ref>). One row per permission.'),
@@ -287,6 +373,7 @@ DICT = [
     ('rules', 'New permission', 'Add a row to parcel_permissions. If it is on an existing parcel, use that parcel_id. If not, draw a parcel from the planning boundary (clipped to exclude existing parcels) with id PC-<ref>.'),
     ('rules', 'Amendment / repeat / extension', 'Add the row with counts_toward_totals = No unless it replaces the counted permission, in which case switch the old row to No and the new row to Yes.'),
     ('rules', 'GeoDirectory refresh', 'Each quarter: rerun the build with the new extract. Schemes reaching 95% built addresses move to Complete; partial ones and mismatches show in register_checks for a person to confirm.'),
+    ('rules', 'Zoned-land parcels', 'Interim estimates. When a permission is granted on one, draw the consent parcel and cut it out of the zoned parcel (or link the permission to it if it covers it). Replace them with county audit parcels when the audit arrives.'),
     ('rules', 'Retiring a parcel', 'Do not delete. A parcel is Built out when all its counted homes are complete and no council capacity is left; filter it off the map. Delete only a parcel created in error.'),
     ('rules', 'Refused / withdrawn', 'Do not add to parcel_permissions. Record land interest in notes if useful.'),
 ]
@@ -297,7 +384,7 @@ gcol = con.execute("SELECT column_name, geometry_type_name, srs_id FROM gpkg_geo
 pcols = [r[1] for r in con.execute('PRAGMA table_info(parcels)')]
 s = lambda st: f"COALESCE(SUM(CASE WHEN pp.status = '{st}' THEN pp.units END), 0)"
 cons_sql = f"({s('Complete')} + {s('Under construction')} + {s('Permitted – not started')} + {s('Stalled')})"
-cap_sql = f"COALESCE(p.council_capacity_units, {cons_sql})"
+cap_sql = f"COALESCE(p.capacity_units, {cons_sql})"
 con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c in pcols)},
   {s('Complete')} AS complete_units, {s('Under construction')} AS under_construction_units,
   {s('Permitted – not started')} AS permitted_not_started_units, {s('Stalled')} AS stalled_units,
@@ -311,7 +398,7 @@ con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c i
   CASE WHEN {cons_sql} > 0 AND {s('Complete')} >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Built out'
        WHEN {s('Complete')} > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
   COALESCE(SUM(pp.geod_new_built), 0) AS geod_new_built, COALESCE(SUM(pp.geod_new_undercon), 0) AS geod_new_undercon,
-  CASE WHEN p.council_capacity_units IS NOT NULL AND {cons_sql} > 1.1 * p.council_capacity_units THEN 'Consented above capacity' ELSE '' END AS flag
+  CASE WHEN p.capacity_units IS NOT NULL AND {cons_sql} > 1.1 * p.capacity_units THEN 'Consented above capacity' ELSE '' END AS flag
 FROM parcels p LEFT JOIN parcel_permissions pp ON pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes'
 GROUP BY p.fid""")
 con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES ('parcel_summary', 'features', 'parcel_summary', ?)", (gcol[2],))

@@ -18,7 +18,7 @@ SUB = PatternFill('solid', fgColor='DCE4EE')
 RED = PatternFill('solid', fgColor='F8D7DA')
 TH = Side(style='thin', color='B7C3D0')
 STATUSES = ['Complete', 'Under construction', 'Permitted – not started', 'Stalled', 'Expired – not started', 'In planning']
-SOURCES = ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit', 'Council audit – county']
+SOURCES = ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)', 'Council audit – county']
 wb = Workbook()
 
 
@@ -78,7 +78,8 @@ WP.auto_filter.ref = f'A1:{L(len(heads))}{len(pdat) + 1}'
 # ------------------------------------------------------------------ Parcels sheet
 WS = wb.create_sheet('Parcels', 0)
 inputs = ['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
-          'developable_area_ha', 'mapped_area_ha', 'council_capacity_units', 'capacity_basis', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
+          'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph',
+          'density_basis', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
 calc = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
         'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['permissions', 'geod_new_built', 'parcel_status', 'flag']
 heads = inputs + calc
@@ -97,14 +98,14 @@ for i, row in enumerate(pdata.itertuples(index=False), 2):
         'permitted_not_started_units': f'={sm("Permitted – not started")}', 'stalled_units': f'={sm("Stalled")}',
         'consented_units': f'={sc["complete_units"]}{i}+{sc["under_construction_units"]}{i}+{sc["permitted_not_started_units"]}{i}+{sc["stalled_units"]}{i}',
         'expired_units': f'={sm("Expired – not started")}', 'in_planning_units': f'={sm("In planning")}',
-        'unconsented_capacity': f'=IF({sc["council_capacity_units"]}{i}="",0,MAX({sc["council_capacity_units"]}{i}-{sc["consented_units"]}{i},0))',
+        'unconsented_capacity': f'=IF({sc["capacity_units"]}{i}="",0,MAX({sc["capacity_units"]}{i}-{sc["consented_units"]}{i},0))',
         'total_supply_units': f'={sc["consented_units"]}{i}+{sc["unconsented_capacity"]}{i}',
         'future_supply_units': f'={sc["total_supply_units"]}{i}-{sc["complete_units"]}{i}',
         'permissions': f'=COUNTIFS({PR("parcel_id")},{A},{cnt})',
         'geod_new_built': f'=SUMIFS({PR("geod_new_built")},{PR("parcel_id")},{A},{cnt})',
         'parcel_status': (f'=IF(AND({sc["consented_units"]}{i}>0,{sc["complete_units"]}{i}>={sc["consented_units"]}{i},{sc["unconsented_capacity"]}{i}=0),"Built out",'
                           f'IF({sc["complete_units"]}{i}>0,"Partly built",IF({sc["consented_units"]}{i}>0,"Consented – not built","No consent")))'),
-        'flag': (f'=IF(AND({sc["council_capacity_units"]}{i}<>"",{sc["consented_units"]}{i}>1.1*{sc["council_capacity_units"]}{i}),"Consented above capacity",'
+        'flag': (f'=IF(AND({sc["capacity_units"]}{i}<>"",{sc["consented_units"]}{i}>1.1*{sc["capacity_units"]}{i}),"Consented above capacity",'
                  f'IF(AND(LEFT({sc["parcel_source"]}{i},8)="Planning",{sc["permissions"]}{i}=0),"Consent parcel with no permission",'
                  f'IF(COUNTIF($A$2:$A${MAXR},{A})>1,"Duplicate parcel_id","")))'),
     }
@@ -132,7 +133,7 @@ for j, (h, vals) in enumerate([('status', STATUSES), ('counts_toward_totals', ['
         WL.cell(row=i, column=j, value=v)
     WL.column_dimensions[L(j)].width = 36
 for ws, col, src in [(WP, pc['status'], '=Lists!$A$2:$A$7'), (WP, pc['counts_toward_totals'], '=Lists!$B$2:$B$3'),
-                     (WP, pc['parcel_id'], f'=Parcels!$A$2:$A${MAXR}'), (WS, sc['parcel_source'], '=Lists!$C$2:$C$5'),
+                     (WP, pc['parcel_id'], f'=Parcels!$A$2:$A${MAXR}'), (WS, sc['parcel_source'], '=Lists!$C$2:$C$6'),
                      (WS, sc['scope'], '=Lists!$D$2:$D$3')]:
     dv = DataValidation(type='list', formula1=src, allow_blank=True, showErrorMessage=True, errorTitle='Not in list', error='Pick a value from the list.')
     ws.add_data_validation(dv)
@@ -164,7 +165,7 @@ def put(r, c, v, fmt='#,##0', bold=False, fill=None):
 r = 4
 cols = ['Parcels', 'Developable ha', 'Consented', 'of which complete', 'Unconsented capacity', 'Total supply', 'Future supply']
 fields = [None, 'developable_area_ha', 'consented_units', 'complete_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units']
-for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:3]), ('By scope', 'scope', ['City', 'County']),
+for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:4]), ('By scope', 'scope', ['City', 'County']),
                           ('By parcel status', 'parcel_status', ['Built out', 'Partly built', 'Consented – not built', 'No consent'])]:
     SM.cell(row=r, column=1, value=title).font = Font(name=F, bold=True, size=11, color='1F3A5F')
     r += 1
@@ -214,7 +215,7 @@ SM.conditional_formatting.add(f'B{chk0}:B{r - 1}', FormulaRule(formula=[f'B{chk0
 put(r, 1, 'Parcels consented above council capacity (review capacity)', None)
 put(r, 2, f'=COUNTIF({SR("flag")},"Consented above capacity")', '#,##0')
 r += 2
-SM.cell(row=r, column=1, value='Blue-grey columns are calculated. Edit only the white columns. The council capacity of an audit parcel is the only unit figure typed on the Parcels sheet.').font = Font(name=F, size=9, italic=True)
+SM.cell(row=r, column=1, value='Blue-grey columns are calculated. Edit only the white columns. capacity_units (council estimate on audit parcels, zoning estimate on zoned-land parcels) is the only unit figure typed on the Parcels sheet.').font = Font(name=F, size=9, italic=True)
 
 # ------------------------------------------------------------------ How to update + dictionary
 H = wb.create_sheet('How to update', 1)
@@ -227,7 +228,8 @@ steps = [
     ('Amendment, repeat or extension of duration', 'Add the row with counts_toward_totals = No unless it replaces the counted permission. If it replaces it (e.g. a new scheme on the same land), set the old row to No and the new row to Yes.'),
     ('Status changes', 'Change status on the Permissions row (Permitted – not started → Under construction → Complete). Use building control commencement and completion notices as the source; note it in notes and update last_updated.'),
     ('Expired permissions', 'Set status to Expired – not started. The units drop out of consented supply; on an audit parcel the council capacity becomes unconsented capacity again.'),
-    ('Council capacity', 'Audit parcels only. If a permission shows the capacity was wrong, update council_capacity_units and say why in notes. Consent parcels have no capacity figure: their supply is the consented units.'),
+    ('Capacity', 'Audit parcels: council estimate. Zoned-land parcels: zoned area x developable share x density (see density_basis). If a permission shows the capacity was wrong, update capacity_units and say why in notes. Consent parcels have no capacity figure: their supply is the consented units.'),
+    ('Zoned land (interim)', 'Zoned-land parcels are estimates from new residential zoning not in any other parcel and not built on. When a permission is granted on one, draw the consent parcel and cut it out of the zoned parcel. When the county audit arrives, replace them.'),
     ('County audit', 'Add county audit parcels with parcel_source = Council audit – county and scope = County. Move county permissions onto them by changing parcel_id, then retire any consent parcel left empty (flag: Consent parcel with no permission).'),
     ('GeoDirectory', 'Each quarter, rerun the build with the new GeoDirectory extract. A scheme whose new built addresses reach 95% of its units moves to Complete (status_source says so); other differences are listed on the GeoDirectory checks sheet for a person to confirm.'),
     ('Retiring a parcel', 'Do not delete. parcel_status turns to Built out when every counted home is complete and no council capacity is left; filter Built out parcels off the map. Their homes stay in the delivery record.'),

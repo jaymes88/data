@@ -256,9 +256,21 @@ def dtype(r):
 
 A['dwtype'] = A.apply(dtype, axis=1)
 BEDCOLS = ['Studio', '1 Bed', '2 Bed', '3 Bed', '4 Bed', '5+ Bed']
+# unit mix read from planning file documents (planner's reports, schedules of accommodation, appeal inspector's reports)
+import os as _os
+PFM = pd.read_csv('planning_file_mix.csv', dtype={'ref': str}).set_index('ref') if _os.path.exists('planning_file_mix.csv') else pd.DataFrame()
 mix_rows = []
 for _, r in A.iterrows():
     m = dict(src='Not available', note='', houses=None, apts=None, unk=None, **{b: None for b in BEDCOLS})
+    if str(r.reg_ref) in PFM.index:
+        f = PFM.loc[str(r.reg_ref)]
+        for b, k in zip(BEDCOLS, ['studio', 'b1', 'b2', 'b3', 'b4', 'b5']):
+            m[b] = int(f[k]) or None
+        m['houses'], m['apts'] = int(f.houses) or None, int(f.apartments) or None
+        m['src'] = 'Planning file documents'
+        m['note'] = f'{f.source}. {f.note}'
+        mix_rows.append(m)
+        continue
     cisbeds = [r[f'{b} Bed Apartments'] for b in ('1', '2', '3', '4', '5+')] + [r[f'{b} Bed Houses'] for b in ('1', '2', '3', '4', '5+')]
     if any(pd.notna(v) for v in cisbeds):
         for k, b in enumerate(['1 Bed', '2 Bed', '3 Bed', '4 Bed', '5+ Bed']):
@@ -762,7 +774,7 @@ SU.cell(row=R, column=1, value='Mix coverage = counted general units with a know
 R += 2
 
 sec('Pipeline bedroom mix (general dwellings, counted applications with known mix)')
-bh = ['Bedrooms', 'Units', 'Share', 'Of which from CIS / KPMG', 'Of which from register description']
+bh = ['Bedrooms', 'Units', 'Share', 'Of which from CIS / KPMG', 'Of which from register description', 'Of which from planning file documents']
 header(SU, R, bh)
 R += 1
 b0 = R
@@ -772,10 +784,11 @@ for b in BEDCOLS:
     put(R, 2, f'=SUMIFS({base})')
     put(R, 4, f'=SUMIFS({base},{ar("Mix Source")},"CIS / KPMG")')
     put(R, 5, f'=SUMIFS({base},{ar("Mix Source")},"Register description")')
+    put(R, 6, f'=SUMIFS({base},{ar("Mix Source")},"Planning file documents")')
     R += 1
 SU.cell(row=R, column=1, value='Total with known mix').font = Font(name=F, bold=True)
-for col in 'BDE':
-    put(R, ' ABCDE'.index(col), f'=SUM({col}{b0}:{col}{R - 1})', bold=True)
+for col in 'BDEF':
+    put(R, ' ABCDEF'.index(col), f'=SUM({col}{b0}:{col}{R - 1})', bold=True)
 for k in range(b0, R):
     put(k, 3, f'=IF($B${R}=0,"",B{k}/$B${R})', '0%')
 R += 1

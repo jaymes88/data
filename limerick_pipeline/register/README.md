@@ -67,3 +67,9 @@ Parcels outside every catchment but clearly tied to a key town or large village 
 3. named in the scheme title and within 2 km.
 
 The rest stay as Rest of county.
+
+## Every parcel contributes
+
+Parcels that would otherwise add nothing get a capacity, with the reason in `capacity_basis`:
+- **Consent parcels with no live permission:** the units of the expired permission (7 parcels) or of the application still in planning (10 parcels). The land has already been put forward for housing.
+- **Anything still without capacity:** council audit parcels the council left at 0 (10 small city-centre sites and CITY-169), and consent parcels with no unit count (4). These get developable area × the density for their area type. Where no developable area is recorded, it's the mapped area × 0.91.

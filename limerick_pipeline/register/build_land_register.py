@@ -342,6 +342,39 @@ cons_units = pp[pp.status.isin(LIVE)].groupby('parcel_id').units.sum()
 m = parcels.parcel_source.eq('Planning consent – not in council audit')
 parcels.loc[m, 'capacity_units'] = np.nan
 
+# ------------------------------------------------------------------ every parcel contributes
+# Parcels that would otherwise add nothing get a capacity, flagged in capacity_basis:
+#   consent parcels with no live consent: units of the expired permission or the pending application (land already put forward for housing)
+#   any parcel still without capacity (council audit parcels the council left at 0, consent parcels with no unit count):
+#   developable area (mapped area x developable share where none is recorded) x density for its area type
+live = pp[pp.counts_toward_totals.eq('Yes') & pp.status.isin(LIVE)].groupby('parcel_id').units.sum()
+dead = pp[pp.counts_toward_totals.eq('Yes')]
+exp_u = dead[dead.status.eq('Expired – not started')].groupby('parcel_id').units.sum()
+pln_u = dead[dead.status.eq('In planning')].groupby('parcel_id').units.sum()
+pid = parcels.parcel_id
+no_live = pid.map(live).fillna(0).eq(0)
+cons_p = parcels.parcel_source.eq('Planning consent – not in council audit')
+fill_e = cons_p & no_live & pid.map(exp_u).fillna(0).gt(0)
+fill_p = cons_p & no_live & ~fill_e & pid.map(pln_u).fillna(0).gt(0)
+parcels.loc[fill_e, 'capacity_units'] = pid[fill_e].map(exp_u)
+parcels.loc[fill_e, 'capacity_basis'] = 'Units of the expired permission (lapsed; land accepted for housing)'
+parcels.loc[fill_p, 'capacity_units'] = pid[fill_p].map(pln_u)
+parcels.loc[fill_p, 'capacity_basis'] = 'Units of the application in planning (pending decision)'
+cc_u = unary_union(list(NBH[NBH.nbhd.eq('City Centre')].geometry)); city_u = unary_union(list(NBH.geometry))
+need = (parcels.capacity_units.fillna(0) <= 0) & ~(cons_p & no_live.eq(False))
+for i, r in parcels[need].iterrows():
+    pt = r.geometry.representative_point()
+    tier = 'City centre' if pt.within(cc_u) else 'City suburbs' if pt.within(city_u) else 'County towns and villages'
+    dev = r.developable_area_ha if pd.notna(r.developable_area_ha) and r.developable_area_ha > 0 else round(r.mapped_area_ha * NET, 3)
+    parcels.at[i, 'developable_area_ha'] = dev
+    parcels.at[i, 'capacity_units'] = max(1.0, round(dev * DENS[tier]))
+    parcels.at[i, 'density_tier'], parcels.at[i, 'density_dph'] = tier, DENS[tier]
+    parcels.at[i, 'density_basis'] = f'{DENS[tier]:.0f} homes/ha = median of {DENS_N.get(tier, 0)} permitted Limerick schemes of 10+ homes in {tier.lower()}; developable share {NET:.2f} where none recorded'
+    was = 'council audit recorded no capacity' if r.parcel_source.startswith('Council') else 'no unit count recorded'
+    parcels.at[i, 'capacity_basis'] = f'Estimate ({was}): developable area x density'
+print('capacity filled: expired', int(fill_e.sum()), 'in planning', int(fill_p.sum()), 'area estimate', int(need.sum()),
+      'units', parcels.loc[fill_e | fill_p | need, 'capacity_units'].sum())
+
 
 # ------------------------------------------------------------------ summary (python copy, for checks and the workbook)
 def summary(parcels, pp):

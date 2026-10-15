@@ -77,7 +77,7 @@ WP.auto_filter.ref = f'A1:{L(len(heads))}{len(pdat) + 1}'
 
 # ------------------------------------------------------------------ Parcels sheet
 WS = wb.create_sheet('Parcels', 0)
-inputs = ['parcel_id', 'parcel_source', 'scope', 'catchment', 'catchment_type', 'catchment_share', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
+inputs = ['parcel_id', 'parcel_source', 'scope', 'catchment', 'catchment_type', 'catchment_share', 'catchment_basis', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
           'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph',
           'density_basis', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
 calc = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
@@ -246,7 +246,7 @@ CW = wb.create_sheet('Catchments', 1)
 CW.sheet_view.showGridLines = False
 CW['A1'] = 'Supply by study catchment'
 CW['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
-CW['A2'] = 'Each parcel is assigned to the catchment it overlaps most (catchment_share on Parcels). Rest of county = parcels touching no catchment. Live formulas on the Parcels sheet.'
+CW['A2'] = 'Each parcel is assigned to the catchment it overlaps most. Parcels just outside a key town or village are added to it when zoned in its LAP, within 500 m, or named in the scheme and within 2 km (catchment_basis on Parcels). Live formulas on the Parcels sheet.'
 CW['A2'].font = Font(name=F, size=9, italic=True)
 ccols = [('Parcels', None), ('Developable ha', 'developable_area_ha'), ('Consented', 'consented_units'), ('Complete', 'complete_units'),
          ('Under construction', 'under_construction_units'), ('Permitted, not started', 'permitted_not_started_units'),

@@ -60,3 +60,10 @@ With the study catchments at `in_catch/lccc_catchments_All.shp` (9 city neighbou
 - The Excel has a Catchments sheet of live SUMIFS.
 
 The neighbourhood polygons are identical to the ones used elsewhere in the study. The catchment file numbers them differently from 2 onwards: King's Island is 2 there and 1a elsewhere.
+
+Parcels outside every catchment but clearly tied to a key town or large village are counted in that settlement's figures, with the reason in `catchment_basis`:
+1. zoned in that settlement's local area plan; or
+2. within 500 m of the catchment; or
+3. named in the scheme title and within 2 km.
+
+The rest stay as Rest of county.

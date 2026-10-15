@@ -218,6 +218,8 @@ assert parcels.parcel_id.is_unique
 # ------------------------------------------------------------------ study catchments
 # Each parcel goes to the catchment it overlaps most; parcels touching none are 'Rest of county'.
 parcels['catchment'], parcels['catchment_type'], parcels['catchment_share'] = 'Rest of county', 'Rest of county', np.nan
+parcels['catchment_basis'] = 'Rest of county'
+EDGE_TOWN_M, NAMED_TOWN_M = 500, 2000   # settlement-edge rules for parcels outside every catchment
 CA = None
 if os.path.exists(CATCH):
     CA = gpd.read_file(CATCH).to_crs(ITM)
@@ -231,11 +233,37 @@ if os.path.exists(CATCH):
             if sh[k] > 0.05:
                 parcels.at[i, 'catchment'], parcels.at[i, 'catchment_type'] = hit.at[k, 'catchment'], hit.at[k, 'catchment_type']
                 parcels.at[i, 'catchment_share'] = round(float(sh[k]), 2)
+                parcels.at[i, 'catchment_basis'] = 'Inside catchment'
+    # parcels outside every catchment but clearly tied to a settlement:
+    #   zoned in that settlement's local area plan; or within EDGE_TOWN_M of it; or named in the scheme and within NAMED_TOWN_M
+    towns = CA[CA.catchment_type.ne('City neighbourhood')]
+    sch = P.groupby('parcel_id').scheme.apply(lambda x: ' '.join(x.astype(str))).to_dict()
+    for i, r in parcels[parcels.catchment.eq('Rest of county')].iterrows():
+        d = towns.distance(r.geometry)
+        k = d.idxmin()
+        town, dist = towns.at[k, 'catchment'], d[k]
+        plan = str(r.get('plan_name') or '')
+        lap_town = next((t for t in towns.catchment if plan.lower().startswith(t.lower())), None)
+        txt = (str(r.local_name) + ' ' + sch.get(r.parcel_id, '')).lower()
+        named = next((t for t in towns.catchment if t.lower() in txt), None)
+        if lap_town:
+            town, basis = lap_town, f'Zoned in the {plan}'
+        elif dist <= EDGE_TOWN_M:
+            basis = f'Edge of settlement (within {EDGE_TOWN_M} m)'
+        elif named and towns.loc[towns.catchment.eq(named)].distance(r.geometry).min() <= NAMED_TOWN_M:
+            town, basis = named, f'Named in scheme, within {NAMED_TOWN_M / 1000:.0f} km'
+        else:
+            continue
+        parcels.at[i, 'catchment'] = town
+        parcels.at[i, 'catchment_type'] = towns.loc[towns.catchment.eq(town), 'catchment_type'].iloc[0]
+        parcels.at[i, 'catchment_share'] = 0.0
+        parcels.at[i, 'catchment_basis'] = basis
+    print('catchment basis', parcels.catchment_basis.str.replace(r' the .*', '', regex=True).value_counts().to_dict())
     print('catchments', parcels.groupby('catchment_type').size().to_dict())
 cols = list(parcels.columns)
-for c in ['catchment', 'catchment_type', 'catchment_share']:
+for c in ['catchment', 'catchment_type', 'catchment_share', 'catchment_basis']:
     cols.remove(c)
-cols[cols.index('neighbourhood'):cols.index('neighbourhood')] = ['catchment', 'catchment_type', 'catchment_share']
+cols[cols.index('neighbourhood'):cols.index('neighbourhood')] = ['catchment', 'catchment_type', 'catchment_share', 'catchment_basis']
 parcels = parcels[cols]
 
 # ------------------------------------------------------------------ parcel_permissions table
@@ -377,7 +405,7 @@ DICT = [
     ('parcels', 'density_tier / density_dph / density_basis', 'Zoned-land parcels: area type, homes per hectare used, and where the figure comes from (Limerick permitted schemes).'),
     ('parcels', 'rzlt_2027_share', 'Share of the parcel on the Residential Zoned Land Tax draft map 2027 (land the council considers serviced and vacant or idle).'),
     ('parcels', 'geod_addresses_now / geod_new_since_2019 / geod_extract', 'GeoDirectory residential addresses inside the parcel now / created since 2019, and the extract date. A rise on a parcel with no permission means building without a linked consent.'),
-    ('parcels', 'catchment / catchment_type / catchment_share', 'Study catchment the parcel overlaps most (city neighbourhood, key town, large village) and the share of the parcel inside it; Rest of county where it touches none.'),
+    ('parcels', 'catchment / catchment_type / catchment_share / catchment_basis', 'Study catchment the parcel overlaps most and the share inside it. Parcels outside every catchment go to a key town or large village when zoned in its local area plan, within 500 m of it, or named in the scheme and within 2 km (catchment_share 0, catchment_basis says which). Otherwise Rest of county.'),
     ('parcels', 'notes', 'Why a parcel was reinstated, matched approximately, or needs checking.'),
     ('parcels', 'last_reviewed / reviewed_by', 'Update on each review.'),
     ('parcel_permissions', 'perm_id', 'Unique permission key (CIS project id or REG-<ref>). One row per permission.'),

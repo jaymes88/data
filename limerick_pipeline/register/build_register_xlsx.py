@@ -47,7 +47,7 @@ def val(v):
 WP = wb.active
 WP.title = 'Permissions'
 pcols = ['perm_id', 'parcel_id', 'catchment', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'status_source', 'status_cis',
-         'geod_new_built', 'geod_new_undercon', 'geod_suggestion', 'geod_extract', 'counts_toward_totals',
+         'geod_new_built', 'geod_new_undercon', 'geod_suggestion', 'geod_extract', 'counts_toward_totals', 'mix_source', 'mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus',
          'relationship', 'tenure', 'delivery_body', 'route', 'final_grant', 'expiry', 'start_on_site', 'est_start', 'est_last_completions',
          'confidence'] + YC + ['match_basis', 'source', 'last_updated', 'notes']
 pdat = pp[pcols].sort_values(['parcel_id', 'perm_id'])

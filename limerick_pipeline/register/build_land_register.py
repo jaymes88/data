@@ -282,6 +282,13 @@ pp['catchment_type'] = pp.parcel_id.map(parcels.set_index('parcel_id').catchment
 pp['match_basis'] = P.site_match.where(P.site_match.eq('Within site'), 'Own consent parcel') \
     .where(~P.parcel_id.str.startswith('CITY') | P.site_match.eq('Within site'), 'Mostly on audit parcel')
 pp['source'] = P.source
+# bedroom mix from the pipeline tracker (CIS, register description or planning file documents)
+_ap = pd.read_excel('Limerick_Residential_Pipeline_Simplified.xlsx', sheet_name='Applications', dtype={'Project Id': str}).set_index('Project Id')
+MIXC = {'Studio': 'mix_studio', '1 Bed': 'mix_1bed', '2 Bed': 'mix_2bed', '3 Bed': 'mix_3bed', '4 Bed': 'mix_4bed', '5+ Bed': 'mix_5plus'}
+pp['mix_source'] = pp.perm_id.map(_ap['Mix Source']).fillna('Not available')
+for k, v in MIXC.items():
+    pp[v] = pd.to_numeric(pp.perm_id.map(_ap[k]), errors='coerce').fillna(0)
+pp.loc[pp.mix_source.str.startswith('Not available'), list(MIXC.values())] = np.nan
 pp['last_updated'] = AS_AT
 pp['notes'] = ''
 assert pp.perm_id.is_unique and pp.status.notna().all()
@@ -452,6 +459,8 @@ DICT = [
     ('parcel_permissions', 'status_cis / status_source', 'Status as CIS and building control give it, and where the current status comes from. GeoDirectory moves a scheme to Complete when new built addresses reach 95% of its units.'),
     ('parcel_permissions', 'geod_new_built / geod_new_undercon', 'GeoDirectory residential addresses created since the application was received, inside the permission boundary and its parcel: built / flagged under construction. Each address credited to one permission.'),
     ('parcel_permissions', 'geod_extract / geod_suggestion', 'Date of the latest address in the GeoDirectory extract used, and what it suggests (applied, or check).'),
+    ('parcel_permissions', 'mix_source / mix_studio … mix_5plus', 'Bedroom mix of the permission and where it comes from (CIS, register description, or planning file documents such as planner\u2019s reports and schedules of accommodation). Blank where not known.'),
+    ('parcel_summary', 'mix_* / units_with_known_mix', 'Bedroom mix summed over the parcel\u2019s counted permissions, and the units it covers (the rest have no known mix).'),
     ('parcel_summary', 'parcel_status', 'Built out (every counted home complete and no unconsented capacity left), Partly built, Consented – not built, No consent. Built out parcels stay in the register as delivery history; future supply is zero.'),
     ('parcel_summary', 'consented_units', 'Complete + under construction + permitted not started + stalled, from parcel_permissions where counts_toward_totals = Yes.'),
     ('parcel_summary', 'unconsented_capacity', 'Council capacity minus consented units, not below zero. Zero on consent parcels.'),
@@ -483,6 +492,8 @@ con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c i
   CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - {s('Complete')} AS REAL) AS future_supply_units,
   {' , '.join(f"CAST(COALESCE(SUM(pp.{c}), 0) AS REAL) AS {c}" for c in YC)},
   CAST(COUNT(pp.perm_id) AS REAL) AS permissions,
+  {', '.join(f"CAST(COALESCE(SUM(pp.{c}), 0) AS REAL) AS {c}" for c in ['mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus'])},
+  CAST(COALESCE(SUM(CASE WHEN pp.mix_source NOT LIKE 'Not available%' THEN pp.units END), 0) AS REAL) AS units_with_known_mix,
   CASE WHEN {cons_sql} > 0 AND {s('Complete')} >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Built out'
        WHEN {s('Complete')} > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
   CAST(COALESCE(SUM(pp.geod_new_built), 0) AS REAL) AS geod_new_built, CAST(COALESCE(SUM(pp.geod_new_undercon), 0) AS REAL) AS geod_new_undercon,

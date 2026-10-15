@@ -51,3 +51,12 @@ Capacity = mapped area × developable share × density:
 - Each parcel's `density_basis` field states its figure and source. These figures are recalculated from the data on each build.
 
 `rzlt_2027_share` records how much of each parcel is on the RZLT map. Parcels also carry GeoDirectory address counts (`geod_addresses_now`, `geod_new_since_2019`), so building on zoned land without a linked permission shows up on refresh.
+
+## Study catchments
+
+With the study catchments at `in_catch/lccc_catchments_All.shp` (9 city neighbourhoods, 6 key towns, 9 large villages), each parcel gets `catchment`, `catchment_type` and `catchment_share`: the catchment it overlaps most and the share of the parcel inside it. Parcels touching no catchment are "Rest of county". Permissions carry their parcel's catchment.
+
+- The GeoPackage has a `catchment_summary` view and a `ref_study_catchments` layer.
+- The Excel has a Catchments sheet of live SUMIFS.
+
+The neighbourhood polygons are identical to the ones used elsewhere in the study. The catchment file numbers them differently from 2 onwards: King's Island is 2 there and 1a elsewhere.

@@ -21,6 +21,7 @@ SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
 XL = 'Limerick_Housing_Land_Register.xlsx'
 AS_AT = '2026-10-11'
+CATCH = 'in_catch/lccc_catchments_All.shp'   # study catchments: 9 city neighbourhoods, key towns, large villages
 ZONING = 'in_zoning/gzt.gpkg'          # national generalised zoning (GZT), current Limerick plans (pull_zoning.py)
 RZLT = 'in_zoning/rzlt2027.gpkg'       # residential zoned land tax, annual draft map 2027
 MIN_ZONED_HA = 0.1                     # drop zoning slivers smaller than this after clipping
@@ -214,6 +215,29 @@ parcels = parcels[['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood
                    'reviewed_by', 'geometry']]
 assert parcels.parcel_id.is_unique
 
+# ------------------------------------------------------------------ study catchments
+# Each parcel goes to the catchment it overlaps most; parcels touching none are 'Rest of county'.
+parcels['catchment'], parcels['catchment_type'], parcels['catchment_share'] = 'Rest of county', 'Rest of county', np.nan
+CA = None
+if os.path.exists(CATCH):
+    CA = gpd.read_file(CATCH).to_crs(ITM)
+    CA['catchment'] = CA.URBAN_AR_2.astype(str).str.strip()
+    CA['catchment_type'] = CA['type'].map({'Key Town': 'Key town', 'Village': 'Large village', 'nbhd': 'City neighbourhood'}).fillna(CA['type'])
+    for i, r in parcels.iterrows():
+        hit = CA[CA.intersects(r.geometry)]
+        if len(hit):
+            sh = hit.geometry.intersection(r.geometry).area / r.geometry.area
+            k = sh.idxmax()
+            if sh[k] > 0.05:
+                parcels.at[i, 'catchment'], parcels.at[i, 'catchment_type'] = hit.at[k, 'catchment'], hit.at[k, 'catchment_type']
+                parcels.at[i, 'catchment_share'] = round(float(sh[k]), 2)
+    print('catchments', parcels.groupby('catchment_type').size().to_dict())
+cols = list(parcels.columns)
+for c in ['catchment', 'catchment_type', 'catchment_share']:
+    cols.remove(c)
+cols[cols.index('neighbourhood'):cols.index('neighbourhood')] = ['catchment', 'catchment_type', 'catchment_share']
+parcels = parcels[cols]
+
 # ------------------------------------------------------------------ parcel_permissions table
 pp = pd.DataFrame({
     'perm_id': P.perm_id, 'parcel_id': P.parcel_id, 'planning_ref': P.planning_ref.fillna(''), 'register_ref': P.register_ref.fillna(''),
@@ -225,6 +249,8 @@ pp = pd.DataFrame({
 })
 for y in YEARS:
     pp[f'est_{y.lower().replace(" ", "_").replace("+", "_plus")}'] = P.perm_id.map(DY[y]).fillna(0).round(1)
+pp['catchment'] = pp.parcel_id.map(parcels.set_index('parcel_id').catchment)
+pp['catchment_type'] = pp.parcel_id.map(parcels.set_index('parcel_id').catchment_type)
 pp['match_basis'] = P.site_match.where(P.site_match.eq('Within site'), 'Own consent parcel') \
     .where(~P.parcel_id.str.startswith('CITY') | P.site_match.eq('Within site'), 'Mostly on audit parcel')
 pp['source'] = P.source
@@ -351,6 +377,7 @@ DICT = [
     ('parcels', 'density_tier / density_dph / density_basis', 'Zoned-land parcels: area type, homes per hectare used, and where the figure comes from (Limerick permitted schemes).'),
     ('parcels', 'rzlt_2027_share', 'Share of the parcel on the Residential Zoned Land Tax draft map 2027 (land the council considers serviced and vacant or idle).'),
     ('parcels', 'geod_addresses_now / geod_new_since_2019 / geod_extract', 'GeoDirectory residential addresses inside the parcel now / created since 2019, and the extract date. A rise on a parcel with no permission means building without a linked consent.'),
+    ('parcels', 'catchment / catchment_type / catchment_share', 'Study catchment the parcel overlaps most (city neighbourhood, key town, large village) and the share of the parcel inside it; Rest of county where it touches none.'),
     ('parcels', 'notes', 'Why a parcel was reinstated, matched approximately, or needs checking.'),
     ('parcels', 'last_reviewed / reviewed_by', 'Update on each review.'),
     ('parcel_permissions', 'perm_id', 'Unique permission key (CIS project id or REG-<ref>). One row per permission.'),
@@ -386,24 +413,31 @@ s = lambda st: f"COALESCE(SUM(CASE WHEN pp.status = '{st}' THEN pp.units END), 0
 cons_sql = f"({s('Complete')} + {s('Under construction')} + {s('Permitted – not started')} + {s('Stalled')})"
 cap_sql = f"COALESCE(p.capacity_units, {cons_sql})"
 con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c in pcols)},
-  {s('Complete')} AS complete_units, {s('Under construction')} AS under_construction_units,
-  {s('Permitted – not started')} AS permitted_not_started_units, {s('Stalled')} AS stalled_units,
-  {s('Expired – not started')} AS expired_units, {s('In planning')} AS in_planning_units,
-  {cons_sql} AS consented_units,
-  MAX({cap_sql} - {cons_sql}, 0) AS unconsented_capacity,
-  {cons_sql} + MAX({cap_sql} - {cons_sql}, 0) AS total_supply_units,
-  {cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - {s('Complete')} AS future_supply_units,
-  {' , '.join(f"COALESCE(SUM(pp.{c}), 0) AS {c}" for c in YC)},
-  COUNT(pp.perm_id) AS permissions,
+  CAST({s('Complete')} AS REAL) AS complete_units, CAST({s('Under construction')} AS REAL) AS under_construction_units,
+  CAST({s('Permitted – not started')} AS REAL) AS permitted_not_started_units, CAST({s('Stalled')} AS REAL) AS stalled_units,
+  CAST({s('Expired – not started')} AS REAL) AS expired_units, CAST({s('In planning')} AS REAL) AS in_planning_units,
+  CAST({cons_sql} AS REAL) AS consented_units,
+  CAST(MAX({cap_sql} - {cons_sql}, 0) AS REAL) AS unconsented_capacity,
+  CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) AS REAL) AS total_supply_units,
+  CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - {s('Complete')} AS REAL) AS future_supply_units,
+  {' , '.join(f"CAST(COALESCE(SUM(pp.{c}), 0) AS REAL) AS {c}" for c in YC)},
+  CAST(COUNT(pp.perm_id) AS REAL) AS permissions,
   CASE WHEN {cons_sql} > 0 AND {s('Complete')} >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Built out'
        WHEN {s('Complete')} > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
-  COALESCE(SUM(pp.geod_new_built), 0) AS geod_new_built, COALESCE(SUM(pp.geod_new_undercon), 0) AS geod_new_undercon,
+  CAST(COALESCE(SUM(pp.geod_new_built), 0) AS REAL) AS geod_new_built, CAST(COALESCE(SUM(pp.geod_new_undercon), 0) AS REAL) AS geod_new_undercon,
   CASE WHEN p.capacity_units IS NOT NULL AND {cons_sql} > 1.1 * p.capacity_units THEN 'Consented above capacity' ELSE '' END AS flag
 FROM parcels p LEFT JOIN parcel_permissions pp ON pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes'
 GROUP BY p.fid""")
 con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES ('parcel_summary', 'features', 'parcel_summary', ?)", (gcol[2],))
 con.execute("INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m) VALUES ('parcel_summary', ?, ?, ?, 0, 0)",
             (gcol[0], gcol[1], gcol[2]))
+sumcols = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
+           'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['geod_new_built']
+con.execute(f"""CREATE VIEW catchment_summary AS SELECT catchment_type, catchment, COUNT(*) AS parcels,
+  CAST(SUM(developable_area_ha) AS REAL) AS developable_area_ha, {', '.join(f'CAST(SUM({c}) AS REAL) AS {c}' for c in sumcols)},
+  CAST(SUM(CASE WHEN parcel_source LIKE 'Zoned land%' THEN unconsented_capacity ELSE 0 END) AS REAL) AS zoned_land_estimate_units
+  FROM parcel_summary GROUP BY catchment_type, catchment""")
+con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier) VALUES ('catchment_summary', 'attributes', 'catchment_summary')")
 con.execute("""CREATE VIEW register_checks AS
   SELECT 'Permission linked to a parcel that does not exist' AS problem, pp.perm_id AS item, pp.parcel_id AS detail FROM parcel_permissions pp
     LEFT JOIN parcels p ON p.parcel_id = pp.parcel_id WHERE p.parcel_id IS NULL
@@ -453,4 +487,6 @@ if GD is not None:
                                    'Recent or active build – check for a missing permission', 'Built before the tracker window – history only')
     CL.to_file(OUT, layer='geod_new_build_outside_parcels', driver='GPKG')
     print('new-build clusters outside parcels:', len(CL), 'addresses', int(CL.new_addresses.sum()) if len(CL) else 0)
+if CA is not None:
+    CA[['catchment', 'catchment_type', 'CSO_LEA', 'geometry']].to_file(OUT, layer='ref_study_catchments', driver='GPKG')
 pd.to_pickle({'parcels': parcels, 'pp': pp, 'T': T, 'YC': YC, 'CL': CL}, 'land_register.pkl')

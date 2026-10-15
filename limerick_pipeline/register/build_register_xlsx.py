@@ -46,7 +46,7 @@ def val(v):
 # ------------------------------------------------------------------ Permissions sheet
 WP = wb.active
 WP.title = 'Permissions'
-pcols = ['perm_id', 'parcel_id', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'status_source', 'status_cis',
+pcols = ['perm_id', 'parcel_id', 'catchment', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'status_source', 'status_cis',
          'geod_new_built', 'geod_new_undercon', 'geod_suggestion', 'geod_extract', 'counts_toward_totals',
          'relationship', 'tenure', 'delivery_body', 'route', 'final_grant', 'expiry', 'start_on_site', 'est_start', 'est_last_completions',
          'confidence'] + YC + ['match_basis', 'source', 'last_updated', 'notes']
@@ -77,7 +77,7 @@ WP.auto_filter.ref = f'A1:{L(len(heads))}{len(pdat) + 1}'
 
 # ------------------------------------------------------------------ Parcels sheet
 WS = wb.create_sheet('Parcels', 0)
-inputs = ['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
+inputs = ['parcel_id', 'parcel_source', 'scope', 'catchment', 'catchment_type', 'catchment_share', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
           'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph',
           'density_basis', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
 calc = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
@@ -166,6 +166,7 @@ r = 4
 cols = ['Parcels', 'Developable ha', 'Consented', 'of which complete', 'Unconsented capacity', 'Total supply', 'Future supply']
 fields = [None, 'developable_area_ha', 'consented_units', 'complete_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units']
 for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:4]), ('By scope', 'scope', ['City', 'County']),
+                          ('By catchment type', 'catchment_type', ['City neighbourhood', 'Key town', 'Large village', 'Rest of county']),
                           ('By parcel status', 'parcel_status', ['Built out', 'Partly built', 'Consented – not built', 'No consent'])]:
     SM.cell(row=r, column=1, value=title).font = Font(name=F, bold=True, size=11, color='1F3A5F')
     r += 1
@@ -241,6 +242,49 @@ for i, (k, v) in enumerate(steps, 1):
     x.font = Font(name=F, size=10)
     x.alignment = Alignment(wrap_text=True, vertical='top')
     H.cell(row=i, column=1).alignment = Alignment(vertical='top', wrap_text=True)
+CW = wb.create_sheet('Catchments', 1)
+CW.sheet_view.showGridLines = False
+CW['A1'] = 'Supply by study catchment'
+CW['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')
+CW['A2'] = 'Each parcel is assigned to the catchment it overlaps most (catchment_share on Parcels). Rest of county = parcels touching no catchment. Live formulas on the Parcels sheet.'
+CW['A2'].font = Font(name=F, size=9, italic=True)
+ccols = [('Parcels', None), ('Developable ha', 'developable_area_ha'), ('Consented', 'consented_units'), ('Complete', 'complete_units'),
+         ('Under construction', 'under_construction_units'), ('Permitted, not started', 'permitted_not_started_units'),
+         ('Unconsented capacity', 'unconsented_capacity'), ('Total supply', 'total_supply_units'), ('Future supply', 'future_supply_units')] + \
+        [(y.replace('est_', '').replace('_plus', '+').replace('_', ' ').upper(), y) for y in YC]
+hdr(CW, 4, ['Catchment type', 'Catchment'] + [c[0] for c in ccols])
+ORDER = ['City neighbourhood', 'Key town', 'Large village', 'Rest of county']
+cat = parcels[['catchment_type', 'catchment']].drop_duplicates()
+cat['o'] = cat.catchment_type.map({k: i for i, k in enumerate(ORDER)})
+r = 5
+for t in ORDER:
+    sub = cat[cat.catchment_type.eq(t)].sort_values('catchment')
+    r0 = r
+    for c_ in sub.catchment:
+        put = lambda rr, cc, v, fmt='#,##0', bold=False: (CW.cell(row=rr, column=cc, value=v), None)[0]
+        CW.cell(row=r, column=1, value=t).font = Font(name=F, size=9)
+        CW.cell(row=r, column=2, value=c_).font = Font(name=F, size=9)
+        for j, (lab, fld) in enumerate(ccols, 3):
+            f = f'=COUNTIFS({SR("catchment")},$B{r})' if fld is None else f'=SUMIFS({SR(fld)},{SR("catchment")},$B{r})'
+            x = CW.cell(row=r, column=j, value=f)
+            x.font = Font(name=F, size=9)
+            x.number_format = '#,##0.0' if fld == 'developable_area_ha' else '#,##0'
+        r += 1
+    CW.cell(row=r, column=1, value=f'{t} total').font = Font(name=F, size=9, bold=True)
+    for j in range(3, 3 + len(ccols)):
+        x = CW.cell(row=r, column=j, value=f'=SUM({L(j)}{r0}:{L(j)}{r - 1})')
+        x.font = Font(name=F, size=9, bold=True)
+        x.fill = SUB
+        x.number_format = '#,##0'
+    CW.cell(row=r, column=1).fill = SUB
+    CW.cell(row=r, column=2).fill = SUB
+    r += 2
+CW.column_dimensions['A'].width = 20
+CW.column_dimensions['B'].width = 24
+for j in range(3, 3 + len(ccols)):
+    CW.column_dimensions[L(j)].width = 11
+CW.freeze_panes = 'C5'
+
 GW = wb.create_sheet('GeoDirectory checks')
 GW['A1'] = 'GeoDirectory checks'
 GW['A1'].font = Font(name=F, bold=True, size=14, color='1F3A5F')

@@ -51,6 +51,7 @@ def table(df, layer):
 S0 = gpd.read_file('in_sca/sca.gpkg').to_crs(ITM)
 # some council sites are drawn as two separate polygons, each carrying the whole site's capacity: merge to one multipart site
 S0 = S0.dissolve(by='rsca', aggfunc='first', as_index=False)
+S0['geometry'] = S0.geometry.make_valid().buffer(0)          # council file has self-intersecting rings (rsca 158, 159)
 sites = gpd.GeoDataFrame({
     'site_id': S0.rsca.astype(int).map(lambda v: f'CITY-{v}'),
     'rsca': S0.rsca.astype('Int64'), 'scope': 'City', 'neighbourhood': S0.nbhd9, 'local_name': S0.neighbourhood,

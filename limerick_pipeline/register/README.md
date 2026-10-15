@@ -9,6 +9,7 @@ One source for housing land in Limerick: the council's audit parcels (our update
 | `parcels` | Polygons | piece of housing land (parcels do not overlap) | `parcel_id` |
 | `parcel_permissions` | Table | counted permission, linked to exactly one parcel | `perm_id` → `parcel_id` |
 | `parcel_summary` | View (polygons) | parcel, with totals calculated live from `parcel_permissions` | `parcel_id` |
+| `active_parcels` | View (polygons) | `parcel_summary` without Finished parcels: land still to deliver homes | `parcel_id` |
 | `register_checks` | View | problem to fix (duplicate refs, unlinked permissions, empty consent parcels) | |
 | `lookup_values`, `data_dictionary` | Tables | allowed values; field meanings and update rules | |
 
@@ -30,13 +31,16 @@ Run from the study folder after `supply/build_supply_gpkg.py` and `supply/supply
 
 Consent parcels use the planning application boundary where one exists (240 of 265 schemes). The rest get a 25 m circle round the scheme point, flagged in `notes`. The `developable_area_ha` field is the council's net area on audit parcels; `mapped_area_ha` is the polygon as drawn.
 
-## GeoDirectory: completions and built-out parcels
+## GeoDirectory: completions and finished parcels
 
 With a GeoDirectory residential address extract at `in_geodir/limerick_geod_residential_points.gpkg` (licensed; not committed), the build counts new addresses (created on or after the application was received) inside each permission boundary, kept within its parcel. Each address is credited to one permission only.
 
 - A scheme with built addresses for 95% or more of its units moves to Complete. `status_cis` keeps the CIS status and `status_source` records the extract date. Its delivery-year estimates are zeroed.
 - Other differences (new addresses on a scheme recorded as not started, fewer addresses than units on a completed scheme, none found) go to `register_checks` and the GeoDirectory checks sheet for a person to confirm.
-- `parcel_status` is calculated: Built out when every counted home is complete and no council capacity is left. Built-out parcels stay in the register as delivery history; future supply is zero. Filter them off the map rather than deleting.
+- `parcel_status` is calculated: Finished when every counted home is complete and no council capacity is left. Finished parcels stay in the file as delivery history with zero future supply; `active_parcels` leaves them out. Don't delete them.
+- An extension of duration counts addresses from 1 January of the parent permission's year (from `related_ref`), so homes built under the parent before the extension was lodged are found.
+- Schemes of 10+ homes count as complete when GeoDirectory is one address short (95% of 12 would demand all 12).
+- `geod_new_vacant`: new homes GeoDirectory marks vacant. `register_checks` lists Finished parcels where more than 10% are vacant.
 - `geod_new_build_outside_parcels` lists clusters of 10+ new addresses (since 2019) outside every parcel, with any granted applications on the land. Recent or active ones point to permissions the register is missing.
 
 Rerun the build with each new extract (quarterly).
@@ -73,3 +77,11 @@ The rest stay as Rest of county.
 Parcels that would otherwise add nothing get a capacity, with the reason in `capacity_basis`:
 - **Consent parcels with no live permission:** the units of the expired permission (7 parcels) or of the application still in planning (10 parcels). The land has already been put forward for housing.
 - **Anything still without capacity:** council audit parcels the council left at 0 (10 small city-centre sites and CITY-169), and consent parcels with no unit count (4). These get developable area × the density for their area type. Where no developable area is recorded, it's the mapped area × 0.91.
+
+## Indicative yield on every parcel
+
+`density_estimate_units` = developable area (or mapped area x the audit's developable share) x the local median density of permitted Limerick schemes. Filled for all parcels so land can be compared on one basis. It does not enter the totals: `capacity_used` (council capacity, zoning estimate, or consented units) does.
+
+## Validation
+
+`validate_register.py` writes `Validation_Report.xlsx`: integrity checks (I), provenance against the live planning register, An Coimisiún Pleanála and BCMS (P), external checks against CSO (E), county audit readiness (C), and a stratified QA sample with planning links for a person to open. Rerun after every rebuild and after the county settlements audit is loaded.

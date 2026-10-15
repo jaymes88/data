@@ -209,10 +209,12 @@ parcels['mapped_area_ha'] = (parcels.area / 1e4).round(3)
 parcels['developable_area_ha'] = parcels.area_ha
 parcels['last_reviewed'] = AS_AT
 parcels['reviewed_by'] = ''
+parcels['density_estimate_units'] = np.nan
 parcels = parcels[['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type',
-                   'density_band', 'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase',
+                   'density_band', 'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'density_estimate_units', 'plan_name', 'zone_gzt', 'phase',
                    'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share', 'register_status', 'notes', 'last_reviewed',
                    'reviewed_by', 'geometry']]
+parcels['geometry'] = parcels.geometry.make_valid().buffer(0)
 assert parcels.parcel_id.is_unique
 
 # ------------------------------------------------------------------ study catchments
@@ -301,7 +303,7 @@ YC = [c for c in pp.columns if c.startswith('est_') and c not in ('est_start', '
 # addresses reach COMPLETE_SHARE of units; anything else is a suggestion for a person to confirm.
 pp['status_cis'] = pp.status
 pp['status_source'] = 'CIS / building control'
-for c in ['geod_new_built', 'geod_new_undercon']:
+for c in ['geod_new_built', 'geod_new_undercon', 'geod_new_vacant']:
     pp[c] = 0
 pp['geod_extract'] = ''
 pp['geod_suggestion'] = ''
@@ -311,13 +313,22 @@ if os.path.exists(GEOD):
     GD['created'] = pd.to_datetime(GD.create_dat, dayfirst=True, errors='coerce')
     GD = GD[GD.demolished.ne('Y') & GD.invalid.ne('Y')]
     extract = GD.created.max().strftime('%Y-%m-%d')
-    gj = gpd.sjoin(GD[['created', 'under_cons', 'geometry']], parcels[['parcel_id', 'geometry']], predicate='within')
+    gj = gpd.sjoin(GD[['created', 'under_cons', 'vacant', 'geometry']], parcels[['parcel_id', 'geometry']], predicate='within')
     parcels['geod_addresses_now'] = parcels.parcel_id.map(gj.groupby('parcel_id').size()).fillna(0).astype(int)
     parcels['geod_new_since_2019'] = parcels.parcel_id.map(gj[gj.created >= '2019-01-01'].groupby('parcel_id').size()).fillna(0).astype(int)
     parcels['geod_extract'] = extract
     pp['geod_extract'] = extract
     pgeom = parcels.set_index('parcel_id').geometry
-    rec = P.set_index('perm_id').received
+    rec = pd.to_datetime(P.set_index('perm_id').received, errors='coerce')
+    # An extension of duration keeps the parent permission alive, so homes built under the parent before the
+    # extension was lodged belong to it. Count addresses from 1 January of the parent's year (related_ref, e.g.
+    # 13447 = 13/447 = 2013) instead of the extension's received date.
+    _apps = gpd.read_file(SUP, layer='applications', ignore_geometry=True)
+    _par = _apps[_apps.final_relationship.str.contains('Extension of duration', na=False)].set_index('perm_id').related_ref.dropna().astype(str)
+    _par = _par[_par.str.fullmatch(r'\d{5,8}')]
+    for k, v in _par.items():
+        if k in rec.index:
+            rec[k] = pd.Timestamp(f'20{v[:2]}-01-01')
     for parcel_id, grp in pp[pp.counts_toward_totals.eq('Yes')].groupby('parcel_id'):
         used = set()
         grp = grp.assign(_o=pd.to_datetime(grp.start_on_site).fillna(pd.to_datetime(grp.final_grant))).sort_values('_o')
@@ -327,12 +338,16 @@ if os.path.exists(GEOD):
             since = pd.to_datetime(rec[r.perm_id]) if pd.notna(rec[r.perm_id]) else pd.Timestamp('2017-01-01')
             a = GD[(GD.created >= since) & GD.within(g) & ~GD.index.isin(used)]
             built, uc = a[a.under_cons.ne('Y')], a[a.under_cons.eq('Y')]
-            nb = min(len(built), int(r.units)) if r.units else len(built)
-            nu = min(len(uc), max(int(r.units) - nb, 0)) if r.units else len(uc)
+            if not r.units or r.units <= 0:                   # zero-unit records (extensions, placeholders) take no addresses
+                continue
+            nb = min(len(built), int(r.units))
+            nu = min(len(uc), max(int(r.units) - nb, 0))
             used |= set(built.index[:nb]) | set(uc.index[:nu])
             pp.at[i, 'geod_new_built'], pp.at[i, 'geod_new_undercon'] = nb, nu
+            pp.at[i, 'geod_new_vacant'] = int(built.iloc[:nb].vacant.eq('Y').sum())
     u = pp.units.replace(0, np.nan)
-    full = (pp.geod_new_built >= COMPLETE_SHARE * u) & pp.units.gt(0)
+    # small schemes: one address short of the unit count still counts (95% of 12 would demand all 12)
+    full = (pp.geod_new_built >= np.where(pp.units >= 10, np.minimum(COMPLETE_SHARE * u, u - 1), COMPLETE_SHARE * u)) & pp.units.gt(0)
     some = (pp.geod_new_built + pp.geod_new_undercon) > 0
     pp.loc[full & pp.status.ne('Complete'), 'geod_suggestion'] = 'Complete – applied'
     pp.loc[~full & some & pp.status.isin(['Permitted – not started', 'Stalled', 'Expired – not started']), 'geod_suggestion'] = 'Under construction – check'
@@ -343,6 +358,8 @@ if os.path.exists(GEOD):
     pp.loc[app, 'status_source'] = f'GeoDirectory {extract}'
     pp.loc[app, YC] = 0.0
     print('GeoDirectory', extract, pp.geod_suggestion.value_counts().to_dict(), 'units moved to Complete', pp.loc[app, 'units'].sum())
+# homes built to date: all units of a completed scheme, otherwise GeoDirectory's built count (part-built schemes)
+pp['units_built'] = np.where(pp.status.eq('Complete'), pp.units, np.minimum(pp.geod_new_built.fillna(0), pp.units))
 
 # consent-only parcels: capacity = consented units on them
 cons_units = pp[pp.status.isin(LIVE)].groupby('parcel_id').units.sum()
@@ -379,6 +396,18 @@ for i, r in parcels[need].iterrows():
     parcels.at[i, 'density_basis'] = f'{DENS[tier]:.0f} homes/ha = median of {DENS_N.get(tier, 0)} permitted Limerick schemes of 10+ homes in {tier.lower()}; developable share {NET:.2f} where none recorded'
     was = 'council audit recorded no capacity' if r.parcel_source.startswith('Council') else 'no unit count recorded'
     parcels.at[i, 'capacity_basis'] = f'Estimate ({was}): developable area x density'
+# Indicative yield for every parcel from area and local density, so all polygons can be compared on one basis.
+# It does not enter the supply totals: those use council capacity, zoning estimate or consented units (capacity_used).
+for i, r in parcels.iterrows():
+    pt = r.geometry.representative_point()
+    tier = r.density_tier if isinstance(r.density_tier, str) and r.density_tier in DENS else (
+        'City centre' if pt.within(cc_u) else 'City suburbs' if pt.within(city_u) else 'County towns and villages')
+    dev = r.developable_area_ha if pd.notna(r.developable_area_ha) and r.developable_area_ha > 0 else round(r.mapped_area_ha * NET, 3)
+    parcels.at[i, 'density_estimate_units'] = max(1.0, round(dev * DENS[tier]))
+    if not (isinstance(r.density_tier, str) and r.density_tier):
+        parcels.at[i, 'density_tier'], parcels.at[i, 'density_dph'] = tier, DENS[tier]
+        parcels.at[i, 'density_basis'] = (f'{DENS[tier]:.0f} homes/ha = median of {DENS_N.get(tier, 0)} permitted Limerick schemes of 10+ homes in '
+                                          f'{tier.lower()}; applied to {"developable" if pd.notna(r.developable_area_ha) and r.developable_area_ha > 0 else f"mapped area x {NET:.2f}"} for density_estimate_units only')
 print('capacity filled: expired', int(fill_e.sum()), 'in planning', int(fill_p.sum()), 'area estimate', int(need.sum()),
       'units', parcels.loc[fill_e | fill_p | need, 'capacity_units'].sum())
 
@@ -395,10 +424,11 @@ def summary(parcels, pp):
     t['capacity_used'] = t.capacity_units.fillna(t.consented_units)
     t['unconsented_capacity'] = (t.capacity_used - t.consented_units).clip(lower=0)
     t['total_supply_units'] = t.consented_units + t.unconsented_capacity
-    t['future_supply_units'] = t.total_supply_units - t.complete_units
+    t['built_units'] = c[c.status.isin(LIVE)].groupby('parcel_id').units_built.sum().reindex(t.index).fillna(0)
+    t['future_supply_units'] = t.total_supply_units - t.built_units
     t['permissions'] = c.groupby('parcel_id').size().reindex(t.index).fillna(0).astype(int)
-    t['parcel_status'] = np.select([(t.consented_units > 0) & (t.complete_units >= t.consented_units) & (t.unconsented_capacity == 0),
-                                    t.complete_units > 0, t.consented_units > 0], ['Built out', 'Partly built', 'Consented – not built'], 'No consent')
+    t['parcel_status'] = np.select([(t.consented_units > 0) & (t.built_units >= t.consented_units) & (t.unconsented_capacity == 0),
+                                    t.built_units > 0, t.consented_units > 0], ['Finished', 'Partly built', 'Consented – not built'], 'No consent')
     return t
 T = summary(parcels, pp)
 print(parcels.parcel_source.value_counts().to_dict())
@@ -457,21 +487,27 @@ DICT = [
     ('parcel_permissions', 'est_start / est_last_completions / confidence / est_*', 'Estimated delivery years (method on the dashboard Assumptions sheet). Update when programmes are known.'),
     ('parcel_permissions', 'match_basis', 'Within site (boundary or point on an audit parcel); Mostly on audit parcel; Own consent parcel.'),
     ('parcel_permissions', 'status_cis / status_source', 'Status as CIS and building control give it, and where the current status comes from. GeoDirectory moves a scheme to Complete when new built addresses reach 95% of its units.'),
-    ('parcel_permissions', 'geod_new_built / geod_new_undercon', 'GeoDirectory residential addresses created since the application was received, inside the permission boundary and its parcel: built / flagged under construction. Each address credited to one permission.'),
+    ('parcel_permissions', 'geod_new_built / geod_new_undercon', 'GeoDirectory residential addresses created since the application was received (for an extension of duration, since 1 January of the parent permission year), inside the permission boundary and its parcel: built / flagged under construction. Each address credited to one permission.'),
     ('parcel_permissions', 'geod_extract / geod_suggestion', 'Date of the latest address in the GeoDirectory extract used, and what it suggests (applied, or check).'),
     ('parcel_permissions', 'mix_source / mix_studio … mix_5plus', 'Bedroom mix of the permission and where it comes from (CIS, register description, or planning file documents such as planner\u2019s reports and schedules of accommodation). Blank where not known.'),
     ('parcel_summary', 'mix_* / units_with_known_mix', 'Bedroom mix summed over the parcel\u2019s counted permissions, and the units it covers (the rest have no known mix).'),
-    ('parcel_summary', 'parcel_status', 'Built out (every counted home complete and no unconsented capacity left), Partly built, Consented – not built, No consent. Built out parcels stay in the register as delivery history; future supply is zero.'),
+    ('parcel_permissions', 'geod_new_vacant', 'Of the built addresses credited to the permission, how many GeoDirectory marks vacant.'),
+    ('parcels', 'density_estimate_units', 'Indicative homes for the parcel from its area x the local median density of permitted Limerick schemes (density_tier, density_dph). Filled for every parcel so all land can be compared on one basis. Not used in the supply totals; on consent parcels the consented units are the figure that counts.'),
+    ('parcel_summary', 'capacity_used', 'The unit figure the parcel is planned on: council or zoning capacity where there is one, otherwise the consented units. Always filled where the parcel has units.'),
+    ('active_parcels', '(all fields)', 'parcel_summary without Finished parcels: the land still to deliver homes. Use this layer for maps of future supply.'),
+    ('parcel_summary', 'parcel_status', 'Finished (every counted home complete and no unconsented capacity left), Partly built, Consented – not built, No consent. Finished parcels stay in the file as delivery history with zero future supply; the active_parcels layer leaves them out.'),
+    ('parcel_permissions', 'units_built', 'Homes built to date: all units of a completed scheme, otherwise the GeoDirectory built count (so part-built schemes are netted off future supply).'),
+    ('parcel_summary', 'built_units / future_supply_units', 'Homes built to date on the parcel, and total supply minus homes built.'),
     ('parcel_summary', 'consented_units', 'Complete + under construction + permitted not started + stalled, from parcel_permissions where counts_toward_totals = Yes.'),
     ('parcel_summary', 'unconsented_capacity', 'Council capacity minus consented units, not below zero. Zero on consent parcels.'),
     ('parcel_summary', 'total_supply_units', 'Consented units + unconsented capacity. Sums across parcels with no double counting.'),
-    ('parcel_summary', 'future_supply_units', 'Total supply minus homes already complete.'),
+    
     ('rules', 'One permission, one parcel', 'Each permission row has exactly one parcel_id; parcels never overlap; totals are calculated, not typed.'),
     ('rules', 'New permission', 'Add a row to parcel_permissions. If it is on an existing parcel, use that parcel_id. If not, draw a parcel from the planning boundary (clipped to exclude existing parcels) with id PC-<ref>.'),
     ('rules', 'Amendment / repeat / extension', 'Add the row with counts_toward_totals = No unless it replaces the counted permission, in which case switch the old row to No and the new row to Yes.'),
     ('rules', 'GeoDirectory refresh', 'Each quarter: rerun the build with the new extract. Schemes reaching 95% built addresses move to Complete; partial ones and mismatches show in register_checks for a person to confirm.'),
     ('rules', 'Zoned-land parcels', 'Interim estimates. When a permission is granted on one, draw the consent parcel and cut it out of the zoned parcel (or link the permission to it if it covers it). Replace them with county audit parcels when the audit arrives.'),
-    ('rules', 'Retiring a parcel', 'Do not delete. A parcel is Built out when all its counted homes are complete and no council capacity is left; filter it off the map. Delete only a parcel created in error.'),
+    ('rules', 'Retiring a parcel', 'Do not delete. A parcel is Finished when all its counted homes are complete (CIS, or GeoDirectory addresses reach the unit count) and no council capacity is left; it drops out of active_parcels. Delete only a parcel created in error.'),
     ('rules', 'Refused / withdrawn', 'Do not add to parcel_permissions. Record land interest in notes if useful.'),
 ]
 pyogrio.write_dataframe(pd.DataFrame(DICT, columns=['table', 'field', 'meaning']), OUT, layer='data_dictionary', driver='GPKG')
@@ -483,26 +519,31 @@ s = lambda st: f"COALESCE(SUM(CASE WHEN pp.status = '{st}' THEN pp.units END), 0
 cons_sql = f"({s('Complete')} + {s('Under construction')} + {s('Permitted – not started')} + {s('Stalled')})"
 cap_sql = f"COALESCE(p.capacity_units, {cons_sql})"
 con.execute(f"""CREATE VIEW parcel_summary AS SELECT {', '.join('p.' + c for c in pcols)},
+  CAST({cap_sql} AS REAL) AS capacity_used,
   CAST({s('Complete')} AS REAL) AS complete_units, CAST({s('Under construction')} AS REAL) AS under_construction_units,
   CAST({s('Permitted – not started')} AS REAL) AS permitted_not_started_units, CAST({s('Stalled')} AS REAL) AS stalled_units,
   CAST({s('Expired – not started')} AS REAL) AS expired_units, CAST({s('In planning')} AS REAL) AS in_planning_units,
   CAST({cons_sql} AS REAL) AS consented_units,
   CAST(MAX({cap_sql} - {cons_sql}, 0) AS REAL) AS unconsented_capacity,
   CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) AS REAL) AS total_supply_units,
-  CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - {s('Complete')} AS REAL) AS future_supply_units,
+  CAST(COALESCE(SUM(CASE WHEN pp.status IN ('Complete', 'Under construction', 'Permitted – not started', 'Stalled') THEN pp.units_built END), 0) AS REAL) AS built_units,
+  CAST({cons_sql} + MAX({cap_sql} - {cons_sql}, 0) - COALESCE(SUM(CASE WHEN pp.status IN ('Complete', 'Under construction', 'Permitted – not started', 'Stalled') THEN pp.units_built END), 0) AS REAL) AS future_supply_units,
   {' , '.join(f"CAST(COALESCE(SUM(pp.{c}), 0) AS REAL) AS {c}" for c in YC)},
   CAST(COUNT(pp.perm_id) AS REAL) AS permissions,
   {', '.join(f"CAST(COALESCE(SUM(pp.{c}), 0) AS REAL) AS {c}" for c in ['mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus'])},
   CAST(COALESCE(SUM(CASE WHEN pp.mix_source NOT LIKE 'Not available%' THEN pp.units END), 0) AS REAL) AS units_with_known_mix,
-  CASE WHEN {cons_sql} > 0 AND {s('Complete')} >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Built out'
-       WHEN {s('Complete')} > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
+  CASE WHEN {cons_sql} > 0 AND COALESCE(SUM(CASE WHEN pp.status IN ('Complete', 'Under construction', 'Permitted – not started', 'Stalled') THEN pp.units_built END), 0) >= {cons_sql} AND MAX({cap_sql} - {cons_sql}, 0) = 0 THEN 'Finished'
+       WHEN COALESCE(SUM(CASE WHEN pp.status IN ('Complete', 'Under construction', 'Permitted – not started', 'Stalled') THEN pp.units_built END), 0) > 0 THEN 'Partly built' WHEN {cons_sql} > 0 THEN 'Consented – not built' ELSE 'No consent' END AS parcel_status,
   CAST(COALESCE(SUM(pp.geod_new_built), 0) AS REAL) AS geod_new_built, CAST(COALESCE(SUM(pp.geod_new_undercon), 0) AS REAL) AS geod_new_undercon,
+  CAST(COALESCE(SUM(pp.geod_new_vacant), 0) AS REAL) AS geod_new_vacant,
   CASE WHEN p.capacity_units IS NOT NULL AND {cons_sql} > 1.1 * p.capacity_units THEN 'Consented above capacity' ELSE '' END AS flag
 FROM parcels p LEFT JOIN parcel_permissions pp ON pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes'
 GROUP BY p.fid""")
-con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES ('parcel_summary', 'features', 'parcel_summary', ?)", (gcol[2],))
-con.execute("INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m) VALUES ('parcel_summary', ?, ?, ?, 0, 0)",
-            (gcol[0], gcol[1], gcol[2]))
+con.execute("CREATE VIEW active_parcels AS SELECT * FROM parcel_summary WHERE parcel_status <> 'Finished'")
+for v in ['parcel_summary', 'active_parcels']:
+    con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier, srs_id) VALUES (?, 'features', ?, ?)", (v, v, gcol[2]))
+    con.execute("INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m) VALUES (?, ?, ?, ?, 0, 0)",
+                (v, gcol[0], gcol[1], gcol[2]))
 sumcols = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
            'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['geod_new_built']
 con.execute(f"""CREATE VIEW catchment_summary AS SELECT catchment_type, catchment, COUNT(*) AS parcels,
@@ -519,6 +560,12 @@ con.execute("""CREATE VIEW register_checks AS
   UNION ALL SELECT 'Duplicate parcel_id', parcel_id, COUNT(*) FROM parcels GROUP BY parcel_id HAVING COUNT(*) > 1
   UNION ALL SELECT 'GeoDirectory: ' || geod_suggestion, perm_id, parcel_id FROM parcel_permissions
     WHERE geod_suggestion <> '' AND geod_suggestion NOT LIKE '%applied'
+  UNION ALL SELECT 'New homes (GeoDirectory, since 2019) on a parcel with no linked permission', p.parcel_id, p.geod_new_since_2019 FROM parcels p
+    WHERE p.geod_new_since_2019 >= 5 AND NOT EXISTS (SELECT 1 FROM parcel_permissions pp WHERE pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes')
+  UNION ALL SELECT 'Finished parcel: over 10% of its new homes vacant on GeoDirectory', parcel_id, geod_new_vacant FROM parcel_summary
+    WHERE parcel_status = 'Finished' AND geod_new_vacant > 0.1 * geod_new_built
+  UNION ALL SELECT 'GeoDirectory addresses on parcel reach the consented units but parcel not Finished', parcel_id, geod_new_built FROM parcel_summary
+    WHERE parcel_status <> 'Finished' AND consented_units > 0 AND geod_new_built >= consented_units
   UNION ALL SELECT 'Consent parcel with no counted permission', p.parcel_id, '' FROM parcels p
     WHERE p.parcel_source LIKE 'Planning consent%' AND NOT EXISTS (SELECT 1 FROM parcel_permissions pp WHERE pp.parcel_id = p.parcel_id AND pp.counts_toward_totals = 'Yes')""")
 con.execute("INSERT INTO gpkg_contents (table_name, data_type, identifier) VALUES ('register_checks', 'attributes', 'register_checks')")

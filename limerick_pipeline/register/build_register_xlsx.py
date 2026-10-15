@@ -47,7 +47,7 @@ def val(v):
 WP = wb.active
 WP.title = 'Permissions'
 pcols = ['perm_id', 'parcel_id', 'catchment', 'planning_ref', 'register_ref', 'scheme', 'units', 'student_bedspaces', 'status', 'status_source', 'status_cis',
-         'geod_new_built', 'geod_new_undercon', 'geod_suggestion', 'geod_extract', 'counts_toward_totals', 'mix_source', 'mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus',
+         'units_built', 'geod_new_built', 'geod_new_undercon', 'geod_new_vacant', 'geod_suggestion', 'geod_extract', 'counts_toward_totals', 'mix_source', 'mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus',
          'relationship', 'tenure', 'delivery_body', 'route', 'final_grant', 'expiry', 'start_on_site', 'est_start', 'est_last_completions',
          'confidence'] + YC + ['match_basis', 'source', 'last_updated', 'notes']
 pdat = pp[pcols].sort_values(['parcel_id', 'perm_id'])
@@ -78,10 +78,10 @@ WP.auto_filter.ref = f'A1:{L(len(heads))}{len(pdat) + 1}'
 # ------------------------------------------------------------------ Parcels sheet
 WS = wb.create_sheet('Parcels', 0)
 inputs = ['parcel_id', 'parcel_source', 'scope', 'catchment', 'catchment_type', 'catchment_share', 'catchment_basis', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type', 'density_band',
-          'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph',
+          'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'density_estimate_units', 'plan_name', 'zone_gzt', 'phase', 'density_tier', 'density_dph',
           'density_basis', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'register_status', 'notes', 'last_reviewed', 'reviewed_by']
-calc = ['complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
-        'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units'] + YC + ['permissions', 'geod_new_built', 'parcel_status', 'flag']
+calc = ['capacity_used', 'complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units', 'consented_units', 'expired_units',
+        'in_planning_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units'] + YC + ['permissions', 'geod_new_built', 'geod_new_vacant', 'parcel_status', 'flag']
 heads = inputs + calc
 hdr(WS, 1, heads, [h in calc for h in heads])
 sc = {h: L(j) for j, h in enumerate(heads, 1)}
@@ -100,11 +100,15 @@ for i, row in enumerate(pdata.itertuples(index=False), 2):
         'expired_units': f'={sm("Expired – not started")}', 'in_planning_units': f'={sm("In planning")}',
         'unconsented_capacity': f'=IF({sc["capacity_units"]}{i}="",0,MAX({sc["capacity_units"]}{i}-{sc["consented_units"]}{i},0))',
         'total_supply_units': f'={sc["consented_units"]}{i}+{sc["unconsented_capacity"]}{i}',
-        'future_supply_units': f'={sc["total_supply_units"]}{i}-{sc["complete_units"]}{i}',
+        'built_units': (f'=SUMIFS({PR("units_built")},{PR("parcel_id")},{A},{cnt},{PR("status")},"<>Expired – not started",'
+                        f'{PR("status")},"<>In planning")'),
+        'future_supply_units': f'={sc["total_supply_units"]}{i}-{sc["built_units"]}{i}',
         'permissions': f'=COUNTIFS({PR("parcel_id")},{A},{cnt})',
         'geod_new_built': f'=SUMIFS({PR("geod_new_built")},{PR("parcel_id")},{A},{cnt})',
-        'parcel_status': (f'=IF(AND({sc["consented_units"]}{i}>0,{sc["complete_units"]}{i}>={sc["consented_units"]}{i},{sc["unconsented_capacity"]}{i}=0),"Built out",'
-                          f'IF({sc["complete_units"]}{i}>0,"Partly built",IF({sc["consented_units"]}{i}>0,"Consented – not built","No consent")))'),
+        'geod_new_vacant': f'=SUMIFS({PR("geod_new_vacant")},{PR("parcel_id")},{A},{cnt})',
+        'capacity_used': f'=IF({sc["capacity_units"]}{i}="",{sc["consented_units"]}{i},{sc["capacity_units"]}{i})',
+        'parcel_status': (f'=IF(AND({sc["consented_units"]}{i}>0,{sc["built_units"]}{i}>={sc["consented_units"]}{i},{sc["unconsented_capacity"]}{i}=0),"Finished",'
+                          f'IF({sc["built_units"]}{i}>0,"Partly built",IF({sc["consented_units"]}{i}>0,"Consented – not built","No consent")))'),
         'flag': (f'=IF(AND({sc["capacity_units"]}{i}<>"",{sc["consented_units"]}{i}>1.1*{sc["capacity_units"]}{i}),"Consented above capacity",'
                  f'IF(AND(LEFT({sc["parcel_source"]}{i},8)="Planning",{sc["permissions"]}{i}=0),"Consent parcel with no permission",'
                  f'IF(COUNTIF($A$2:$A${MAXR},{A})>1,"Duplicate parcel_id","")))'),
@@ -163,11 +167,11 @@ def put(r, c, v, fmt='#,##0', bold=False, fill=None):
 
 
 r = 4
-cols = ['Parcels', 'Developable ha', 'Consented', 'of which complete', 'Unconsented capacity', 'Total supply', 'Future supply']
-fields = [None, 'developable_area_ha', 'consented_units', 'complete_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units']
+cols = ['Parcels', 'Developable ha', 'Consented', 'Built to date', 'Unconsented capacity', 'Total supply', 'Future supply']
+fields = [None, 'developable_area_ha', 'consented_units', 'built_units', 'unconsented_capacity', 'total_supply_units', 'future_supply_units']
 for title, key, groups in [('By parcel source', 'parcel_source', SOURCES[:4]), ('By scope', 'scope', ['City', 'County']),
                           ('By catchment type', 'catchment_type', ['City neighbourhood', 'Key town', 'Large village', 'Rest of county']),
-                          ('By parcel status', 'parcel_status', ['Built out', 'Partly built', 'Consented – not built', 'No consent'])]:
+                          ('By parcel status', 'parcel_status', ['Finished', 'Partly built', 'Consented – not built', 'No consent'])]:
     SM.cell(row=r, column=1, value=title).font = Font(name=F, bold=True, size=11, color='1F3A5F')
     r += 1
     for j, h in enumerate([''] + cols, 1):
@@ -233,7 +237,7 @@ steps = [
     ('Zoned land (interim)', 'Zoned-land parcels are estimates from new residential zoning not in any other parcel and not built on. When a permission is granted on one, draw the consent parcel and cut it out of the zoned parcel. When the county audit arrives, replace them.'),
     ('County audit', 'Add county audit parcels with parcel_source = Council audit – county and scope = County. Move county permissions onto them by changing parcel_id, then retire any consent parcel left empty (flag: Consent parcel with no permission).'),
     ('GeoDirectory', 'Each quarter, rerun the build with the new GeoDirectory extract. A scheme whose new built addresses reach 95% of its units moves to Complete (status_source says so); other differences are listed on the GeoDirectory checks sheet for a person to confirm.'),
-    ('Retiring a parcel', 'Do not delete. parcel_status turns to Built out when every counted home is complete and no council capacity is left; filter Built out parcels off the map. Their homes stay in the delivery record.'),
+    ('Retiring a parcel', 'Do not delete. parcel_status turns to Finished when every counted home is complete and no council capacity is left; filter Finished parcels off the map. Their homes stay in the delivery record.'),
     ('Checks', 'Summary sheet checks must all be zero before figures are reported. Red cells on Permissions (check column) and Parcels (flag) show what to fix.'),
 ]
 for i, (k, v) in enumerate(steps, 1):

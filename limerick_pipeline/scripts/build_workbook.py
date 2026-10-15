@@ -235,7 +235,7 @@ for i, a in _lab.iterrows():
     if pd.isna(a.Latitude) or pd.isna(a.Units):
         continue
     d = np.sqrt(((_r8.Latitude - a.Latitude) * 111000) ** 2 + ((_r8.Longitude - a.Longitude) * 67000) ** 2)
-    ok = (d < 100) & ((_r8.Units - a.Units).abs() <= 0.1 * a.Units)
+    ok = (d < 250) & ((_r8.Units - a.Units).abs() <= 0.1 * a.Units)   # 250 m: CIS points for Part 8s are often on the settlement, not the site
     if ok.any():
         j = d[ok].idxmin()
         A.loc[i, ['rel', 'rel_ref', 'rel_basis', 'rel_conf']] = ['Duplicate', _r8.loc[j, 'ref'],

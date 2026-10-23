@@ -45,7 +45,18 @@ With a GeoDirectory residential address extract at `in_geodir/limerick_geod_resi
 
 Rerun the build with each new extract (quarterly).
 
-## Zoned land without consent (interim, until the county audit)
+## County settlements audit
+
+`inputs/RSCA_settlementsDP2022.gpkg` is the council's audit of sites in the smaller Development Plan 2022 settlements, received October 2026. It holds 48 sites in 13 settlements, each with an area and a density. It loads as parcel source "Council audit – county", with IDs like `CTY-BRUFF-1`:
+- **Capacity:** area × the council density. Foynes gives a range (10-22), so the midpoint is used.
+- **Tiers:** the council's TAZ tier is kept in `register_status` (Tier 1 serviced, Tier 2 serviceable).
+- **Hospital site 5:** it is zoned Enterprise & Employment and has no density, so it carries the register's own area × density estimate and a note.
+- **Later consents:** the audit was drawn for the 2022 plan. A consent lying 95%+ inside a site joins that site's parcel. A consent that only overlaps a site keeps its own land, and the site is clipped and its capacity scaled to what is left. Sites left under 0.05 ha are dropped: 7 were, all covered by consents granted since.
+- **Interim estimates:** interim zoned-land parcels in the audited settlements are replaced by the audit.
+
+The audit does not cover the Local Area Plan towns. Abbeyfeale, Adare, Caherconlish, Castleconnell, Croom, Kilmallock, Newcastle West, Patrickswell and Rathkeale stay on the interim estimate below. Validation checks C1–C3 report this.
+
+## Zoned land without consent (interim, for settlements without a council audit)
 
 `pull_zoning.py` downloads Limerick's current zoning (national generalised zoning types, GZT) and the Residential Zoned Land Tax draft map 2027 to `in_zoning/`. The build adds parcels with source "Zoned land – no consent (estimate)" for new residential zoning (R1, plus R3 zones described as new residential, residential development area or serviced sites). It only uses zoning that isn't already in another parcel and isn't built on: existing GeoDirectory homes plus 15 m are cut out, and pieces under 0.1 ha are dropped. Mixed-use and town-centre zoning are not included. Phase 2 zoning is included and flagged.
 

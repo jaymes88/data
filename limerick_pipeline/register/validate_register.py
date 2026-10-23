@@ -286,8 +286,16 @@ if os.path.exists('cso_recon.pkl'):
 za = ps[ps.parcel_source.str.startswith('Zoned land')]
 au = ps[ps.parcel_source.eq('Council audit – county')]
 if len(au):
-    j = gpd.sjoin(za[['parcel_id', 'geometry']], au[['parcel_id', 'geometry']], predicate='intersects')
-    check('C1', 'County audit', 'interim zoned-land parcels overlapped by county audit parcels (replace)', 'WARN' if len(j) else 'PASS', len(j), 'retire or clip the zoned estimates', pd.DataFrame(j.drop(columns='geometry')))
+    j = gpd.overlay(za[['parcel_id', 'geometry']], au[['parcel_id', 'geometry']], how='intersection', keep_geom_type=True)
+    j = j[j.area > 100]
+    check('C1', 'County audit', 'county audit loaded; no interim zoned-land parcel overlaps it', 'WARN' if len(j) else 'PASS', len(j),
+          f'{len(au)} county audit parcels, {au.capacity_used.sum():,.0f} homes', pd.DataFrame(j.drop(columns='geometry')))
+    d = za[za.scope.eq('County')].groupby('plan_name').agg(parcels=('parcel_id', 'size'), ha=('mapped_area_ha', 'sum'), homes=('capacity_used', 'sum')).reset_index()
+    check('C2', 'County audit', 'county settlements still on interim zoning estimates (not in the council audit)', 'WARN' if len(d) else 'PASS', int(d.parcels.sum()),
+          f'{d.homes.sum():,.0f} homes in {len(d)} plan areas: ask the council for audits of these towns', d)
+    d = au[au.notes.fillna('').ne('')][['parcel_id', 'local_name', 'zoning', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'notes']]
+    check('C3', 'County audit', 'county audit sites changed on loading (clipped by later consents, or no density given)', 'WARN' if len(d) else 'PASS', len(d),
+          'the audit was drawn for the 2022 plan; consents granted since keep their own land', d)
 else:
     check('C1', 'County audit', 'county settlements audit loaded', 'WARN', 0, f'not yet received; {len(za)} interim zoned-land parcels ({za.capacity_units.sum():,.0f} homes) stand in for it')
 

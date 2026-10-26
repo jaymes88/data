@@ -17,6 +17,8 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 ITM = 2157
+REVIEW = 'in_review/parcel_review.csv'          # analyst review of each parcel (status, notes, site no., capacity), by parcel_id
+REMOVED = 'in_review/review_removed.gpkg'       # parcels the analyst removed: their land and permissions stay out of the register
 SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
 XL = 'Limerick_Housing_Land_Register.xlsx'
@@ -43,6 +45,11 @@ for f in (OUT,):
 
 S = gpd.read_file(SUP, layer='sites').to_crs(ITM)
 P = gpd.read_file(SUP, layer='permissions').to_crs(ITM)
+RM = gpd.read_file(REMOVED).to_crs(ITM) if os.path.exists(REMOVED) else gpd.GeoDataFrame(columns=['parcel_id', 'planning_refs', 'review_notes', 'geometry'], geometry='geometry', crs=ITM)
+rm_refs = {x for v in RM.planning_refs.fillna('') for x in v.split(';') if x}
+REMOVED_PERMS = P[P.planning_ref.astype(str).isin(rm_refs) | P.register_ref.astype(str).isin(rm_refs)].copy()
+P = P[~P.perm_id.isin(REMOVED_PERMS.perm_id)].copy()
+print('permissions removed at review:', list(REMOVED_PERMS.planning_ref))
 PB = gpd.read_file(SUP, layer='permission_boundaries').to_crs(ITM).set_index('perm_id')
 DY = pd.read_excel('Limerick_Housing_Supply_Dashboard.xlsx', sheet_name='Schemes', dtype={'Perm id': str}).set_index('Perm id')
 fc = lambda p: gpd.GeoDataFrame([f['properties'] for f in json.load(open(p))['features']],
@@ -206,7 +213,7 @@ if os.path.exists(ZONING):
         ZG = pd.concat([ZG, AK], ignore_index=True)
     newres = ZG.ZONE_GZT.eq('R1') | (ZG.ZONE_GZT.eq('R3') & ZG.ZONE_ORIG.str.contains('New Residential|Development Area|Servic', case=False, na=False))
     ZG = ZG[newres].explode(index_parts=False).reset_index(drop=True)
-    taken_all = unary_union(list(A.geometry) + list(C.geometry))
+    taken_all = unary_union(list(A.geometry) + list(C.geometry) + list(RM.geometry))   # removed at review: stays out
     homes = unary_union(list(gpd.read_file(GEOD).to_crs(ITM).buffer(HOME_BUFFER_M))) if os.path.exists(GEOD) else None
     rz = unary_union(list(gpd.read_file(RZLT).to_crs(ITM).geometry)) if os.path.exists(RZLT) else None
     city_u = unary_union(list(NBH.geometry))
@@ -282,6 +289,35 @@ parcels = parcels[['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood
                    'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share', 'register_status', 'notes', 'last_reviewed',
                    'reviewed_by', 'geometry']]
 parcels['geometry'] = parcels.geometry.make_valid().buffer(0)
+# analyst review: status and notes carried onto each parcel; parcels marked Remove are taken out
+RV = pd.read_csv(REVIEW, dtype=str).fillna('') if os.path.exists(REVIEW) else pd.DataFrame(columns=['parcel_id'])
+for c in ['review_status', 'review_site_no', 'review_capacity', 'review_notes', 'reviewed_by', 'reviewed_on', 'review_round']:
+    parcels[c] = parcels.parcel_id.map(RV.set_index('parcel_id')[c]) if c in RV else ''
+    parcels[c] = parcels[c].fillna('')
+parcels.loc[parcels.review_status.eq(''), 'review_status'] = 'To review'
+# IDs of zoned-land parcels (numbered in sequence) and consent parcels (named after the largest permission) can change
+# between builds, so a parcel whose ID is zoned land or not in the review takes the review of the reviewed polygon it
+# overlaps by 50%+
+REVIEW_SHAPES = 'in_review/review_shapes.gpkg'
+if os.path.exists(REVIEW_SHAPES):
+    ZR = gpd.read_file(REVIEW_SHAPES).to_crs(ITM)
+    ZR = ZR[ZR.review_status.ne('Remove')]                      # removed land and permissions are already taken out
+    loose = parcels.parcel_id.str.startswith('ZN-') | ~parcels.parcel_id.isin(RV.parcel_id)
+    for i in parcels.index[loose]:
+        g = parcels.at[i, 'geometry']
+        ov = ZR.geometry.intersection(g).area
+        hit = ov.max() >= 0.5 * g.area if len(ov) else False
+        for c in ['review_status', 'review_site_no', 'review_capacity', 'review_notes', 'reviewed_by']:
+            v = ZR.at[ov.idxmax(), c] if hit else None
+            parcels.at[i, c] = (v if isinstance(v, str) else '' if v is None or pd.isna(v) else str(v)) if hit else ('To review' if c == 'review_status' else '')
+        on = hit and parcels.at[i, 'review_status'] != 'To review'
+        parcels.at[i, 'reviewed_on'], parcels.at[i, 'review_round'] = ('2026-10-26', 'Non-city review, Oct 2026') if on else ('', '')
+gone_ids = set()                                             # removals are applied by shape and permission (REMOVED)
+parcels = parcels[~parcels.parcel_id.isin(gone_ids)].copy()
+cap_ov = pd.to_numeric(parcels.review_capacity, errors='coerce')
+parcels.loc[cap_ov.notna(), 'capacity_units'] = cap_ov[cap_ov.notna()]
+parcels.loc[cap_ov.notna(), 'capacity_basis'] = 'Analyst review capacity'
+print('review:', parcels.review_status.value_counts().to_dict(), 'removed', sorted(gone_ids))
 assert parcels.parcel_id.is_unique
 
 # ------------------------------------------------------------------ study catchments

@@ -82,9 +82,16 @@ check('I7', 'Integrity', 'unit conservation (permissions = parcel buckets; total
 sup = gpd.read_file(SUP, layer='permissions')
 sup['units'] = sup.units.fillna(0)
 m = sup[['perm_id', 'units', 'status']].merge(pp[['perm_id', 'units', 'status_cis', 'status']], on='perm_id', how='outer', suffixes=('_supply', '_register'), indicator=True)
-diff = m[(m._merge != 'both') | (m.units_supply.fillna(-1) != m.units_register.fillna(-1))]
-check('I8', 'Integrity', 'supply GeoPackage and register hold the same permissions and units', 'PASS' if diff.empty else 'FAIL', len(diff),
-      f'{len(sup)} vs {len(pp)} permissions', diff)
+# permissions the analyst removed at review are expected to be missing from the register
+import os
+rmv = set()
+if os.path.exists('in_review/review_removed.gpkg'):
+    rr = gpd.read_file('in_review/review_removed.gpkg')
+    refs = {x for v in rr.planning_refs.fillna('') for x in v.split(';') if x}
+    rmv = set(sup[sup.planning_ref.astype(str).isin(refs) | sup.register_ref.astype(str).isin(refs)].perm_id)
+diff = m[((m._merge != 'both') | (m.units_supply.fillna(-1) != m.units_register.fillna(-1))) & ~m.perm_id.isin(rmv)]
+check('I8', 'Integrity', 'supply GeoPackage and register hold the same permissions and units (less review removals)', 'PASS' if diff.empty else 'FAIL', len(diff),
+      f'{len(sup)} vs {len(pp)} permissions; {len(rmv)} removed at review', diff)
 wbk = pd.read_excel(WB, sheet_name='Applications', dtype={'Project Id': str})
 wc = wbk[wbk['Counts?'].eq('Yes')][['Project Id', 'Units', 'Register Ref']].rename(columns={'Project Id': 'perm_id'})
 m = wc.merge(pp[['perm_id', 'units', 'source']], on='perm_id', how='outer', indicator=True)

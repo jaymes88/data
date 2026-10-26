@@ -1,0 +1,453 @@
+parcel_id,review_status,review_site_no,review_capacity,review_notes,reviewed_by,reviewed_on,review_round
+CITY-129,To review,,,,,,
+CITY-130,To review,,,,,,
+CITY-131,To review,,,,,,
+CITY-132,To review,,,,,,
+CITY-133,To review,,,,,,
+CITY-1,To review,,,,,,
+CITY-10,To review,,,,,,
+CITY-12,To review,,,,,,
+CITY-13,To review,,,,,,
+CITY-14,To review,,,,,,
+CITY-15,To review,,,,,,
+CITY-16,To review,,,,,,
+CITY-164,To review,,,,,,
+CITY-2,To review,,,,,,
+CITY-20,To review,,,,,,
+CITY-21,To review,,,,,,
+CITY-24,To review,,,,,,
+CITY-25,To review,,,,,,
+CITY-3,To review,,,,,,
+CITY-5,To review,,,,,,
+CITY-6,To review,,,,,,
+CITY-7,To review,,,,,,
+CITY-8,To review,,,,,,
+CITY-9,To review,,,,,,
+CITY-159,To review,,,,,,
+CITY-53,To review,,,,,,
+CITY-54,To review,,,,,,
+CITY-56,To review,,,,,,
+CITY-57,To review,,,,,,
+CITY-60,To review,,,,,,
+CITY-61,To review,,,,,,
+CITY-62,To review,,,,,,
+CITY-63,To review,,,,,,
+CITY-65,To review,,,,,,
+CITY-66,To review,,,,,,
+CITY-67,To review,,,,,,
+CITY-69,To review,,,,,,
+CITY-70,To review,,,,,,
+CITY-71,To review,,,,,,
+CITY-72,To review,,,,,,
+CITY-101,To review,,,,,,
+CITY-102,To review,,,,,,
+CITY-104,To review,,,,,,
+CITY-105,To review,,,,,,
+CITY-106,To review,,,,,,
+CITY-107,To review,,,,,,
+CITY-108,To review,,,,,,
+CITY-162,To review,,,,,,
+CITY-163,To review,,,,,,
+CITY-22,To review,,,,,,
+CITY-23,To review,,,,,,
+CITY-86,To review,,,,,,
+CITY-87,To review,,,,,,
+CITY-88,To review,,,,,,
+CITY-89,To review,,,,,,
+CITY-91,To review,,,,,,
+CITY-92,To review,,,,,,
+CITY-93,To review,,,,,,
+CITY-95,To review,,,,,,
+CITY-97,To review,,,,,,
+CITY-99,To review,,,,,,
+CITY-26,To review,,,,,,
+CITY-27,To review,,,,,,
+CITY-28,To review,,,,,,
+CITY-29,To review,,,,,,
+CITY-30,To review,,,,,,
+CITY-31,To review,,,,,,
+CITY-32,To review,,,,,,
+CITY-33,To review,,,,,,
+CITY-34,To review,,,,,,
+CITY-134,To review,,,,,,
+CITY-135,To review,,,,,,
+CITY-136,To review,,,,,,
+CITY-137,To review,,,,,,
+CITY-139,To review,,,,,,
+CITY-141,To review,,,,,,
+CITY-142,To review,,,,,,
+CITY-143,To review,,,,,,
+CITY-144,To review,,,,,,
+CITY-145,To review,,,,,,
+CITY-146,To review,,,,,,
+CITY-147,To review,,,,,,
+CITY-148,To review,,,,,,
+CITY-149,To review,,,,,,
+CITY-151,To review,,,,,,
+CITY-152,To review,,,,,,
+CITY-153,To review,,,,,,
+CITY-154,To review,,,,,,
+CITY-155,To review,,,,,,
+CITY-156,To review,,,,,,
+CITY-160,To review,,,,,,
+CITY-168,To review,,,,,,
+CITY-35,To review,,,,,,
+CITY-40,To review,,,,,,
+CITY-41,To review,,,,,,
+CITY-109,To review,,,,,,
+CITY-169,To review,,,,,,
+CITY-43,To review,,,,,,
+CITY-45,To review,,,,,,
+CITY-46,To review,,,,,,
+CITY-47,To review,,,,,,
+CITY-49,To review,,,,,,
+CITY-50,To review,,,,,,
+CITY-51,To review,,,,,,
+CITY-52,To review,,,,,,
+CITY-75,To review,,,,,,
+CITY-77,To review,,,,,,
+CITY-78,To review,,,,,,
+CITY-79,To review,,,,,,
+CITY-80,To review,,,,,,
+CITY-81,To review,,,,,,
+CITY-82,To review,,,,,,
+CITY-83,To review,,,,,,
+CITY-84,To review,,,,,,
+CITY-110,To review,,,,,,
+CITY-111,To review,,,,,,
+CITY-112,To review,,,,,,
+CITY-113,To review,,,,,,
+CITY-114,To review,,,,,,
+CITY-115,To review,,,,,,
+CITY-116,To review,,,,,,
+CITY-117,To review,,,,,,
+CITY-118,To review,,,,,,
+CITY-119,To review,,,,,,
+CITY-120,To review,,,,,,
+CITY-121,To review,,,,,,
+CITY-123,To review,,,,,,
+CITY-124,To review,,,,,,
+CITY-125,To review,,,,,,
+CITY-127,To review,,,,,,
+CITY-128,To review,,,,,,
+CITY-158,To review,,,,,,
+CITY-74,To review,,,,,,
+CITY-76,To review,,,,,,
+CTY-ABBEYFEALE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-7,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ABBEYFEALE-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAHERCONLISH-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAHERCONLISH-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAHERCONLISH-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAHERCONLISH-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAHERCONLISH-7,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CASTLECONNEL-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILMALLOCK-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILMALLOCK-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILMALLOCK-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILMALLOCK-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILMALLOCK-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-11D,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-12,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-13,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-14,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-17,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-U1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-U2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-U3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-U4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-NEWCASTLEWES-U5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-7,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-U1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-U2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-RATHKEALE-U3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ADARE-1A,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ADARE-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ADARE-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ADARE-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-ASKEATON-U6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUFF-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUFF-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUFF-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUFF-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CAPPAMORE-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-6,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-7,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-CROOM-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-HOSPITAL-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-HOSPITAL-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-HOSPITAL-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-HOSPITAL-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-HOSPITAL-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILFINANE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILFINANE-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILFINANE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILFINANE-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-KILFINANE-5,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-MURROE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-MURROE-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-MURROE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-MURROE-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-10,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-11,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-14,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-17,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-7,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-8,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PATRICKSWELL-9,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BALLINGARRY-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BALLINGARRY-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BALLINGARRY-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUREE-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUREE-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-BRUREE-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-DROMCOLLIHER-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-DROMCOLLIHER-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-DROMCOLLIHER-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-DROMCOLLIHER-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-FOYNES-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-GLIN-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-GLIN-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-GLIN-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-GLIN-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PALLASGREEN-1,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PALLASGREEN-2,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PALLASGREEN-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PALLASKENRY-3,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+CTY-PALLASKENRY-4,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Limerick-005,To review,,,,,,
+ZN-Limerick-001,To review,,,,,,
+ZN-Limerick-004,To review,,,,,,
+ZN-Limerick-002,To review,,,,,,
+ZN-Limerick-003,To review,,,,,,
+ZN-Abbeyfeale-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Abbeyfeale-002,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Caherconlish-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Castleconnel-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Kilmallock-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Kilmallock-002,Remove,,,this is a leftover green space. units complete,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Kilmallock-003,Remove,,,this is a leftover green space. units complete,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-002,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-003,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-004,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-005,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-006,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-007,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-008,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-009,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-010,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-011,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-NewcastleWes-012,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Adare-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Adare-002,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Adare-003,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Croom-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+ZN-Patrickswell-001,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-188014,To review,,,,,,
+PC-18892,To review,,,,,,
+PC-2360025,To review,,,,,,
+PC-188004,To review,,,,,,
+PC-188008,To review,,,,,,
+PC-188009,To review,,,,,,
+PC-19302,To review,,,,,,
+PC-198003,To review,,,,,,
+PC-19970,To review,,,,,,
+PC-21147,To review,,,,,,
+PC-21342,To review,,,,,,
+PC-221189,To review,,,,,,
+PC-268363,To review,,,,,,
+PC-CE2019087,To review,,,,,,
+PC-CIS1417205,To review,,,,,,
+PC-PT8LL283,To review,,,,,,
+PC-Part81063948,To review,,,,,,
+PC-181104,To review,,,,,,
+PC-18496,To review,,,,,,
+PC-187020,To review,,,,,,
+PC-191037,To review,,,,,,
+PC-197025,To review,,,,,,
+PC-201074,To review,,,,,,
+PC-20361,To review,,,,,,
+PC-211152,To review,,,,,,
+PC-21350,To review,,,,,,
+PC-21853,To review,,,,,,
+PC-2360263,To review,,,,,,
+PC-2360842,To review,,,,,,
+PC-248132,To review,,,,,,
+PC-2561323,To review,,,,,,
+PC-ABPREF307631,To review,,,,,,
+PC-178017,To review,,,,,,
+PC-18219,To review,,,,,,
+PC-188001,To review,,,,,,
+PC-191060,To review,,,,,,
+PC-19769,To review,,,,,,
+PC-198008,To review,,,,,,
+PC-19841,To review,,,,,,
+PC-201142,To review,,,,,,
+PC-20622,To review,,,,,,
+PC-211454,To review,,,,,,
+PC-211598,To review,,,,,,
+PC-221003,To review,,,,,,
+PC-221172,To review,,,,,,
+PC-221367,To review,,,,,,
+PC-221381,To review,,,,,,
+PC-228023,To review,,,,,,
+PC-23283,To review,,,,,,
+PC-2360150,To review,,,,,,
+PC-2360345,To review,,,,,,
+PC-2460004,To review,,,,,,
+PC-2460020,To review,,,,,,
+PC-2460075,To review,,,,,,
+PC-2460151,To review,,,,,,
+PC-2460570,To review,,,,,,
+PC-2460633,To review,,,,,,
+PC-2461298,To review,,,,,,
+PC-2560001,To review,,,,,,
+PC-2560365,To review,,,,,,
+PC-2560540,To review,,,,,,
+PC-2560595,To review,,,,,,
+PC-2560771,To review,,,,,,
+PC-2561242,To review,,,,,,
+PC-268371,To review,,,,,,
+PC-Part81264155,To review,,,,,,
+PC-187029,To review,,,,,,
+PC-2460864,To review,,,,,,
+PC-268364,To review,,,,,,
+PC-19990,To review,,,,,,
+PC-201115,To review,,,,,,
+PC-201195,To review,,,,,,
+PC-20467,To review,,,,,,
+PC-211216,To review,,,,,,
+PC-211217,To review,,,,,,
+PC-21364,To review,,,,,,
+PC-21532,To review,,,,,,
+PC-221107,To review,,,,,,
+PC-22471,To review,,,,,,
+PC-2360615,To review,,,,,,
+PC-2360703,To review,,,,,,
+PC-2560425,To review,,,,,,
+PC-Part81371977,To review,,,,,,
+PC-CIS1422145,To review,,,,,,
+PC-178001,To review,,,,,,
+PC-178012,To review,,,,,,
+PC-187040,To review,,,,,,
+PC-211257,To review,,,,,,
+PC-211395,To review,,,,,,
+PC-2360759,To review,,,,,,
+PC-2561232,To review,,,,,,
+PC-178015,To review,,,,,,
+PC-181243,To review,,,,,,
+PC-18434,To review,,,,,,
+PC-18618,To review,,,,,,
+PC-1872,To review,,,,,,
+PC-188007,To review,,,,,,
+PC-2460468,To review,,,,,,
+PC-CIS1419395,To review,,,,,,
+PC-PT8LL277,To review,,,,,,
+PC-Part81363543,To review,,,,,,
+PC-Part81378081,To review,,,,,,
+PC-188013,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-258297,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-21550,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-19518,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-22394,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81033981,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-19233,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-18994,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-21531,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2561211,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81345677,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-198010,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-201101,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-22990,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2460304,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2560977,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2660779,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-191255,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2560947,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81392454,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-19552,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-198005,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-20525,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-22410,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-188002,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-211170,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2148,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2560211,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-178013,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-18200,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-228017,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81248404,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-19149,Remove,,,incorrect application,,2026-10-26,"Non-city review, Oct 2026"
+PC-197016,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-198007,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-198009,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-20314,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-20341,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-20678,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-20857,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-21240,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-218012,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-228000,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-228013,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2360207,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2360393,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2360493,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2360546,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2360798,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-24352,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2460046,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2460299,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2460568,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2461182,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-2660063,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-CIS1015929,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81316160,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"
+PC-Part81378805,Accepted,,,,,2026-10-26,"Non-city review, Oct 2026"

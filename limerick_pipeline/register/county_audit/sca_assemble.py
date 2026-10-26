@@ -100,6 +100,25 @@ for _, k in gpd.read_file('in_county/rsca_settlements.gpkg', layer='RSCA').to_cr
         Capacity=np.nan, TAZ_Tier=k.TAZ_Tier, Taz_Type=k['Taz Type'], wastewater=None, permission=None, site_status=None, note=None,
         placement='2022 polygon', source='County audit 2022 (not in the May 2026 Excel)', geometry=k.geometry)], crs=ITM)], ignore_index=True)
 
+# sites with no council capacity: area x the town's average density for that type of site in the council Excel
+# (median of the Excel densities for the town and site type; else the town's new residential figure; else the county median)
+S['cls'] = S.zoning.map(cls).replace({'existing': 'resi'})
+S['dn'] = S.density.map(num)
+town_d = S.groupby(['settlement', 'cls']).dn.median().to_dict()
+cty_d = S.groupby('cls').dn.median().to_dict()
+A26['cap_basis'] = np.where(A26.Capacity.notna(), 'Council capacity (' + A26.source + ')', 'Council area x density (' + A26.source + ')')
+for i, r in A26.iterrows():
+    if pd.notna(r.Capacity) or (pd.notna(r.Densities) and str(r.Densities).strip() not in ('', 'None', 'nan')):
+        continue
+    c_ = cls(r.Zone_Orig)
+    c_ = c_ if c_ in ('serviced', 'centre') else 'resi'
+    d = town_d.get((r.settlement_name, c_), town_d.get((r.settlement_name, 'resi'), cty_d.get(c_)))
+    basis = 'town' if (r.settlement_name, c_) in town_d or (r.settlement_name, 'resi') in town_d else 'county'
+    A26.at[i, 'Densities'] = f'{d:g}'
+    A26.at[i, 'Capacity'] = round(r.Area * d, 1)
+    A26.at[i, 'cap_basis'] = f'Area x {basis} average density for {c_} sites in the council audit ({d:g}/ha)'
+    A26.at[i, 'note'] = (str(r.note) if pd.notna(r.note) else '').replace('fill in area, density and capacity', 'site number and figures to confirm').replace(
+        'fill in site number, density and capacity', 'site number to confirm')
 A26['geometry'] = A26.geometry.make_valid().buffer(0)
 A26 = gpd.GeoDataFrame(A26, crs=ITM)
 # polygons must not overlap: a later row loses the overlap to an earlier one (Excel sites come first)
@@ -111,7 +130,7 @@ for i in A26.index:
 A26 = A26[A26.area > 100]
 for c_ in ['TAZ_Tier']:
     A26[c_] = pd.to_numeric(A26[c_], errors='coerce')
-for c_ in ['Densities', 'Zone_Orig', 'Taz_Type', 'wastewater', 'permission', 'site_status', 'note', 'site_no']:
+for c_ in ['Densities', 'Zone_Orig', 'Taz_Type', 'wastewater', 'permission', 'site_status', 'note', 'site_no', 'cap_basis']:
     A26[c_] = A26[c_].astype('string')
 A26.to_file('in_county/county_audit_2026.gpkg', layer='sites', driver='GPKG')
 U = pd.DataFrame(unplaced)

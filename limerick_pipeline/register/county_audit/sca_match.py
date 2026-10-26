@@ -33,7 +33,12 @@ ZIP = []
 for f in glob.glob('in_sca2/zip/*.gpkg'):
     if 'askeaton' in f:
         continue
-    g = gpd.read_file(f).to_crs(ITM); g['src'] = 'Council outline (zip): ' + os.path.basename(f); ZIP.append(g)
+    g = gpd.read_file(f).to_crs(ITM); g['src'] = 'Council outline (zip): ' + os.path.basename(f)
+    town = {'newcastlewest': 'Newcastle West', 'rathkeale': 'Rathkeale', 'caherconlish': 'Caherconlish',
+            'castleconnellextra': 'Castleconnell'}[os.path.basename(f)[:-5]]
+    g['PLAN_NAME'] = town                     # polygons drawn by hand carry no plan name: the file says which town
+    if 'ZONE_ORIG' not in g: g['ZONE_ORIG'] = None
+    ZIP.append(g)
 ZIP = pd.concat(ZIP, ignore_index=True)
 AK = gpd.read_file('in_sca2/zip/askeatonresizoning.gpkg').to_crs(ITM)
 AK = gpd.GeoDataFrame(dict(PLAN_NAME='Askeaton', ZONE_ORIG=AK['desc'], src='Askeaton zoning file', geometry=AK.geometry), crs=ITM)

@@ -1,6 +1,5 @@
 sheet,xl_row,settlement,site,zoning,area_txt,area,density,capacity,stype,tier,ww,permission,units_perm,status,note,xid
 Key Town,3,Newcastle West,1,Town Centre,0.5,0.5,33.0,16.5,Brownfield,2.0,Red,,,No Permission,Requires site assembly. Why is the Town Centre Zoning Density less than New Resi?,Newcastle West 1
-Key Town,5,Newcastle West,3,Town Centre,1.2,1.2,33.0,39.6,Infill,2.0,Red,,,No Permission,,Newcastle West 3
 Key Town,6,Newcastle West,4,Town Centre,0.8,0.8,33.0,26.4,Infill,1.0,Red,,,No Permission,,Newcastle West 4
 Key Town,9,Newcastle West,7,New Resi,0.3,0.3,35.0,10.5,Brownfield,1.0,Red,,,No Permission,7 and 8 were joined together in the SCA in the LAP. The capacity of Site 8 was not included. I have added Site 8 on a separate line.,Newcastle West 7
 Key Town,11,Newcastle West,9,New Resi,1.9,1.9,35.0,66.5,Infill,2.0,Red,,,No Permission,,Newcastle West 9

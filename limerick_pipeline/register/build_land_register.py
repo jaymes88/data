@@ -114,8 +114,7 @@ if os.path.exists(COUNTY):
         local_name=K.settlement_name + ' – site ' + K.site_no, register_status=status,
         landowner='', zoning=K.Zone_Orig.fillna(''), site_type=K.Taz_Type.fillna('').str.strip(), density_band=K.Densities.fillna('').astype(str),
         area_ha=K.Area, capacity_units=K.cap, reconcile_action=np.where(K.source.str.startswith('County audit 2022'), '', 'county-2026'), parcel_source='Council audit – county',
-        capacity_basis=np.where(K.Capacity.notna(), 'Council county audit capacity (' + K.source + ')',
-                                np.where(K.dph.notna(), 'Council county audit: area x density (' + K.source + ')', '')),
+        capacity_basis=K.cap_basis.fillna(''),
         notes=notes, geometry=K.geometry), crs=ITM)
     A = pd.concat([A, KA], ignore_index=True)
     print('county audit sites', len(KA), 'settlements', K.settlement_name.nunique(), 'capacity', KA.capacity_units.sum(),
@@ -457,7 +456,7 @@ need = (parcels.capacity_units.fillna(0) <= 0) & ~(cons_p & no_live.eq(False))
 # county audit: a council capacity of 0 stands (land taken by a permission), and council polygons with no Excel row yet
 # wait for their figures rather than take an estimate (they still get density_estimate_units)
 cty = parcels.parcel_source.eq('Council audit – county')
-need &= ~(cty & (parcels.capacity_units.eq(0) | parcels.notes.fillna('').str.contains('fill in')))
+need &= ~(cty & parcels.capacity_units.eq(0))
 for i, r in parcels[need].iterrows():
     pt = r.geometry.representative_point()
     tier = 'City centre' if pt.within(cc_u) else 'City suburbs' if pt.within(city_u) else 'County towns and villages'

@@ -23,6 +23,7 @@ XL = 'Limerick_Housing_Land_Register.xlsx'
 AS_AT = '2026-10-11'
 CATCH = 'in_catch/lccc_catchments_All.shp'   # study catchments: 9 city neighbourhoods, key towns, large villages
 ZONING = 'in_zoning/gzt.gpkg'          # national generalised zoning (GZT), current Limerick plans (pull_zoning.py)
+ASKEATON = 'in_zoning/askeaton_zoning.gpkg'   # Askeaton future residential zoning, supplied Oct 2026 (not in the national GZT file)
 RZLT = 'in_zoning/rzlt2027.gpkg'       # residential zoned land tax, annual draft map 2027
 MIN_ZONED_HA = 0.1                     # drop zoning slivers smaller than this after clipping
 HOME_BUFFER_M = 15                     # existing homes (GeoDirectory) and their curtilage clipped out of zoned land
@@ -181,6 +182,13 @@ print('densities', DENS, 'n', DENS_N, 'net share', NET)
 Z = gpd.GeoDataFrame(columns=['geometry'], geometry='geometry', crs=ITM)
 if os.path.exists(ZONING):
     ZG = gpd.read_file(ZONING).to_crs(ITM)
+    if os.path.exists(ASKEATON):
+        AK = gpd.read_file(ASKEATON).to_crs(ITM).explode(index_parts=False)
+        AK = gpd.GeoDataFrame(dict(PLAN_NAME='Askeaton Local Area Plan (council zoning file, Oct 2026)',
+                                   ZONE_GZT=np.where(AK.zone.str.startswith('RDA'), 'R1', 'R3'),
+                                   ZONE_ORIG=AK['desc'].str.replace('Resi ', 'Residential ', regex=False),
+                                   geometry=AK.geometry.values), crs=ITM)
+        ZG = pd.concat([ZG, AK], ignore_index=True)
     newres = ZG.ZONE_GZT.eq('R1') | (ZG.ZONE_GZT.eq('R3') & ZG.ZONE_ORIG.str.contains('New Residential|Development Area|Servic', case=False, na=False))
     ZG = ZG[newres].explode(index_parts=False).reset_index(drop=True)
     taken_all = unary_union(list(A.geometry) + list(C.geometry))
@@ -226,7 +234,8 @@ if os.path.exists(ZONING):
                               f'{d:.0f} homes/ha = lower quartile of permitted county schemes, for serviced-site (self-build) zoning'
                               for d, t in zip(Z.density_dph, Z.density_tier)]
         Z['density_basis'] = Z.density_basis + f'; developable share {NET:.2f} = council city audit developable area / mapped area'
-        Z['notes'] = np.where(Z.phase.ne(''), 'Phase 2 zoning: later phasing', '') 
+        Z['notes'] = np.where(Z.phase.ne(''), 'Phase 2 zoning: later phasing', '')
+        Z.loc[Z.plan.eq('Askeaton'), 'notes'] = (Z.loc[Z.plan.eq('Askeaton'), 'notes'] + '; Askeaton WWTP Red status in HDAP 2026: no remaining wastewater capacity').str.strip('; ')
         for c in ['register_status', 'landowner', 'site_type', 'density_band']:
             Z[c] = ''
         Z['rsca'] = pd.NA

@@ -58,6 +58,8 @@ The audit does not cover the Local Area Plan towns. Abbeyfeale, Adare, Caherconl
 
 ## Zoned land without consent (interim, for settlements without a council audit)
 
+Askeaton is missing from the national zoning file. Its future residential zoning comes from `inputs/askeaton_zoning.gpkg` (supplied October 2026; copy it to `in_zoning/askeaton_zoning.gpkg` before building). Residential Development Areas are treated as new residential and Residential Service Sites as serviced sites. Phase 2 areas are flagged. The parcels also note Askeaton's Red wastewater status from the council's HDAP 2026.
+
 `pull_zoning.py` downloads Limerick's current zoning (national generalised zoning types, GZT) and the Residential Zoned Land Tax draft map 2027 to `in_zoning/`. The build adds parcels with source "Zoned land – no consent (estimate)" for new residential zoning (R1, plus R3 zones described as new residential, residential development area or serviced sites). It only uses zoning that isn't already in another parcel and isn't built on: existing GeoDirectory homes plus 15 m are cut out, and pieces under 0.1 ha are dropped. Mixed-use and town-centre zoning are not included. Phase 2 zoning is included and flagged.
 
 Capacity = mapped area × developable share × density:

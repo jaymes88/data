@@ -81,11 +81,14 @@ if os.path.exists(COUNTY):
     # The audit predates some consents. A consent lying mostly inside a site (95%+) joins that site's parcel below; one
     # that only overlaps it keeps its own land, so the site is clipped and its capacity scaled to what is left.
     # Remnants under 0.05 ha are dropped.
+    # Only the 2022 sites are clipped: the May 2026 Excel and the council's own outlines already take account of
+    # permissions (site status, reduced areas), so they keep their full outline and permissions attach to them below.
     K['orig_ha'] = K.area / 1e4
     K['clip_note'] = ''
+    old = K.source.str.startswith('County audit 2022')
     for _, r in P.iterrows():
         g = PB.loc[r.perm_id, 'geometry'] if r.perm_id in PB.index else r.geometry.buffer(POINT_BUFFER_M)
-        for k in K.index[K.intersects(g)]:
+        for k in K.index[old & K.intersects(g)]:
             ov = K.at[k, 'geometry'].intersection(g).area
             if ov / g.area < 0.95 and ov > 0.01 * K.at[k, 'geometry'].area:
                 K.at[k, 'geometry'] = K.at[k, 'geometry'].difference(g)
@@ -110,7 +113,7 @@ if os.path.exists(COUNTY):
         site_id=K.site_id, parcel_id=K.site_id, rsca=None, scope='County', neighbourhood='Outside city neighbourhoods',
         local_name=K.settlement_name + ' – site ' + K.site_no, register_status=status,
         landowner='', zoning=K.Zone_Orig.fillna(''), site_type=K.Taz_Type.fillna('').str.strip(), density_band=K.Densities.fillna('').astype(str),
-        area_ha=K.Area, capacity_units=K.cap, reconcile_action='', parcel_source='Council audit – county',
+        area_ha=K.Area, capacity_units=K.cap, reconcile_action=np.where(K.source.str.startswith('County audit 2022'), '', 'county-2026'), parcel_source='Council audit – county',
         capacity_basis=np.where(K.Capacity.notna(), 'Council county audit capacity (' + K.source + ')',
                                 np.where(K.dph.notna(), 'Council county audit: area x density (' + K.source + ')', '')),
         notes=notes, geometry=K.geometry), crs=ITM)
@@ -129,7 +132,10 @@ for pid, r in cons.iterrows():
     else:
         g, a = r.geometry.buffer(POINT_BUFFER_M), f'Approximate – {POINT_BUFFER_M} m circle round scheme point (no boundary)'
     clipped = g.difference(audit_union)
-    if clipped.is_empty or clipped.area < 0.05 * g.area:     # almost all on audit land: belongs to the audit parcel it overlaps most
+    ov = A[A.intersects(g)]
+    best = ov.geometry.intersection(g).area.idxmax() if len(ov) else None
+    soft = best is not None and ov.at[best, 'reconcile_action'] == 'county-2026' and ov.geometry.intersection(g).area.max() >= 0.5 * g.area
+    if clipped.is_empty or clipped.area < 0.05 * g.area or soft:   # (mostly) on audit land: belongs to the audit parcel it overlaps most
         ov = A[A.intersects(g)]
         k = ov.geometry.intersection(g).area.idxmax()
         P.at[pid, 'parcel_id'] = ov.at[k, 'parcel_id']

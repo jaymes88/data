@@ -55,7 +55,9 @@ Rerun the build with each new extract (quarterly).
 `inputs/county_audit_2026_unplaced.csv` lists the 34 Excel sites still without a polygon. To place one, draw or copy its polygon into the `sites` layer with the Excel values, then rebuild. **From now on the GeoPackage is the source: don't rerun `sca_assemble.py`, or manual placements will be overwritten.**
 
 When loading:
-- **Capacity:** the council's figure is used, and a council capacity of 0 stands. A consent lying 95%+ inside a site joins its parcel. A site a consent only partly overlaps is clipped, and its capacity is scaled to what is left. Sites left under 0.05 ha are dropped as built or permitted since.
+- **Capacity:** the council's figure is used, and a council capacity of 0 stands.
+- **Permissions on 2026 sites:** the May 2026 sites and council outlines keep their full outline. A permission lying 50%+ inside one is attached to it, so its homes count against the council's capacity there.
+- **Permissions on 2022 sites:** these predate later consents. A consent that only partly overlaps a 2022 site keeps its own land; the site is clipped and its capacity scaled to what is left. 2022 sites left under 0.05 ha are dropped.
 - **Other fields:** tier and wastewater go into `register_status`; site status, permission, the council's note and how the site was placed go into `notes`.
 
 Towns where some sites are unplaced keep the interim zoned-land estimate on the rest of their new residential zoning (validation check C2).

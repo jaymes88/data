@@ -18,7 +18,7 @@ SUB = PatternFill('solid', fgColor='DCE4EE')
 RED = PatternFill('solid', fgColor='F8D7DA')
 TH = Side(style='thin', color='B7C3D0')
 STATUSES = ['Complete', 'Under construction', 'Permitted – not started', 'Stalled', 'Expired – not started', 'In planning']
-SOURCES = ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)', 'Council audit – county']
+SOURCES = ['Council audit', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)', 'Council audit – county']
 wb = Workbook()
 
 

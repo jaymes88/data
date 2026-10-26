@@ -60,7 +60,7 @@ def where(geom_series, layer, col):
 # ------------------------------------------------------------------ audit parcels
 A = S.copy()
 A['parcel_id'] = A.site_id
-A['parcel_source'] = np.where(A.reconcile_action.fillna('').str.startswith('Reinstated'), 'Council audit – reinstated', 'Council audit')
+A['parcel_source'] = 'Council audit'          # the 3 sites we reinstated are council audit land; why is kept in notes
 A['scope'] = A.scope.fillna('City')
 A['capacity_basis'] = 'Council estimate (area × density band)'
 A['notes'] = A.reconcile_action.fillna('')
@@ -499,14 +499,14 @@ parcels_out.to_file(OUT, layer='parcels', driver='GPKG')
 pyogrio.write_dataframe(clean(pp), OUT, layer='parcel_permissions', driver='GPKG')
 lists = pd.DataFrame([('status', s, 'Yes' if s in LIVE else 'No') for s in ['Complete', 'Under construction', 'Permitted – not started', 'Stalled',
                                                                         'Expired – not started', 'In planning']]
-                     + [('parcel_source', s, '') for s in ['Council audit', 'Council audit – reinstated', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)',
+                     + [('parcel_source', s, '') for s in ['Council audit', 'Planning consent – not in council audit', 'Zoned land – no consent (estimate)',
                                                            'Council audit – county']]
                      + [('counts_toward_totals', s, '') for s in ['Yes', 'No']],
                      columns=['list', 'value', 'counted_as_consented'])
 pyogrio.write_dataframe(lists, OUT, layer='lookup_values', driver='GPKG')
 DICT = [
     ('parcels', 'parcel_id', 'Unique parcel key. CITY-<rsca> for council audit parcels; PC-<planning ref> for consent parcels outside the audit. Never reuse a retired id.'),
-    ('parcels', 'parcel_source', 'Council audit / Council audit – reinstated / Planning consent – not in council audit / Zoned land – no consent (estimate: new residential zoning outside every other parcel and not built on, until the county audit replaces it). County audit parcels: Council audit – county.'),
+    ('parcels', 'parcel_source', 'Council audit (3 sites removed in the council review and reinstated by us say so in notes) / Planning consent – not in council audit / Zoned land – no consent (estimate: new residential zoning outside every other parcel and not built on, until the county audit replaces it). County audit parcels: Council audit – county.'),
     ('parcels', 'scope', 'City or County.'),
     ('parcels', 'rsca', 'Council audit reference (audit parcels only).'),
     ('parcels', 'capacity_units', 'Homes the parcel can take: council estimate on audit parcels, zoning estimate on zoned-land parcels. Blank on consent parcels: their capacity is the consented units.'),

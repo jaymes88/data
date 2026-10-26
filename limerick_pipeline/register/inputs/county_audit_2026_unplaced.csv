@@ -1,0 +1,35 @@
+sheet,xl_row,settlement,site,zoning,area_txt,area,density,capacity,stype,tier,ww,permission,units_perm,status,note,xid
+Key Town,3,Newcastle West,1,Town Centre,0.5,0.5,33.0,16.5,Brownfield,2.0,Red,,,No Permission,Requires site assembly. Why is the Town Centre Zoning Density less than New Resi?,Newcastle West 1
+Key Town,5,Newcastle West,3,Town Centre,1.2,1.2,33.0,39.6,Infill,2.0,Red,,,No Permission,,Newcastle West 3
+Key Town,6,Newcastle West,4,Town Centre,0.8,0.8,33.0,26.4,Infill,1.0,Red,,,No Permission,,Newcastle West 4
+Key Town,9,Newcastle West,7,New Resi,0.3,0.3,35.0,10.5,Brownfield,1.0,Red,,,No Permission,7 and 8 were joined together in the SCA in the LAP. The capacity of Site 8 was not included. I have added Site 8 on a separate line.,Newcastle West 7
+Key Town,11,Newcastle West,9,New Resi,1.9,1.9,35.0,66.5,Infill,2.0,Red,,,No Permission,,Newcastle West 9
+Key Town,12,Newcastle West,10,New Resi,1.2,1.2,35.0,42.0,Infill,1.0,Red,,,No Permission,,Newcastle West 10
+Key Town,14,Newcastle West,11A,New Resi,*5.9,5.9,35.0,,Infill,1.0,Red,,,No Permission,,Newcastle West 11A
+Key Town,15,Newcastle West,11B,New Resi,*2.8,2.8,35.0,,Infill,1.0,Red,,,No Permission,,Newcastle West 11B
+Key Town,16,Newcastle West,11C,New Resi,*20.2,20.2,35.0,,Greenfield,2.0,Red,Withdrawn - 2660004 - 150 units on 4.760,,No Permission,,Newcastle West 11C
+Key Town,21,Newcastle West,15,Residential Serviced Sites,3,3.0,10.0,30.0,Infill,1.0,Red,,,No Permission,,Newcastle West 15
+Key Town,22,Newcastle West,16,Residential Serviced Sites,2.1,2.1,10.0,21.0,Greenfield,1.0,Red,,,No Permission,,Newcastle West 16
+Towns,4,Abbeyfeale,2,Town Centre,1.05,1.05,33.0,34.65,Brownfield,1.0,Green,,,No Permission,Requires Site Assembly ,Abbeyfeale 2
+Towns,6,Abbeyfeale,4,New Resi,0.38,0.38,22.0,8.36,Infill,1.0,Green,,,No Permission,,Abbeyfeale 4
+Towns,8,Abbeyfeale,6,New Resi,2.7,2.7,22.0,59.400000000000006,Infill,1.0,Green,,,No Permission,,Abbeyfeale 6
+Towns,21,Castleconnell,7,Residential Serviced Sites,1.4,1.4,10.0,14.0,Greenfield,2.0,Green,,,No Permission,,Castleconnell 7
+Towns,28,Caherconlish,4,New Resi,2.094,2.094,22.0,46.068,Infill,2.0,Green,,,No Permission,,Caherconlish 4
+Large Villages,4,Adare,1b,New Resi,0.98,0.98,22.0,21.56,Infill,1.0,Amber,,,In Use - Reduced Area Available,Council Car Park,Adare 1b
+Large Villages,5,Adare,2,New Resi,4.8,4.8,22.0,105.6,Greenfield,1.0,Amber,22990 - 74 units,74.0,Permission Granted,,Adare 2
+Large Villages,6,Adare,3,New Resi,0.54,0.54,22.0,11.88,Infill,,,19684 - 17 units,17.0,Complete,,Adare 3
+Large Villages,7,Adare,4,New Resi,2.6,2.6,22.0,57.2,Infill,2.0,Amber,2460304 - 25 units - Granted on Appeal,25.0,Permission Granted,,Adare 4
+Large Villages,10,Adare,7,New Resi,1.9,1.9,22.0,41.8,Infill,2.0,Amber,,,Permission Withdrawn,2660202 - 64 units Withdrawn; Pre-Planning 1039397 - 70 units,Adare 7
+Large Villages,12,Adare,9,Residential Serviced Sites,2.3,2.3,10.0,23.0,Infill,2.0,Amber,,,No Permission Sought,,Adare 9
+Large Villages,13,Adare,10,Residential Serviced Sites,0.8,0.8,10.0,8.0,Infill,,,22/493 - 5 units ,5.0,Complete,,Adare 10
+Large Villages,16,Askeaton,1,Residential Development Area - Phase 1,1.233,1.233,22.0,27.126,Infill,1.0,Red,,,No Permission Sought,,Askeaton 1
+Large Villages,17,Askeaton,2 & 3 & 4,Residential Development Area - Phase 1,6.516,6.516,22.0,143.352,Infill,1.0,Red,,,No Permission Sought,,Askeaton 2 & 3 & 4
+Large Villages,18,Askeaton,5,Residential Serviced Sites - Phase 1,2.334,2.334,10.0,23.34,Infill,2.0,Red,,,No Permission Sought,,Askeaton 5
+Large Villages,20,Askeaton,7,Residential Serviced Sites - Phase 1,1.341,1.341,10.0,13.41,Infill,1.0,Red,,,No Permission Sought,,Askeaton 7
+Large Villages,21,Askeaton,8,Residential Serviced Sites - Phase 2,0.641,0.641,10.0,6.41,Infill,1.0,Red,,,No Permission Sought,,Askeaton 8
+Large Villages,24,Askeaton,11,Residential Serviced Sites - Phase 2,3.36,3.36,10.0,33.6,Greenfield,1.0,Red,,,No Permission Sought,,Askeaton 11
+Large Villages,44,Croom,4,Residential Development Area - Phase 1,0.539,0.539,22.0,11.858,Infill,1.0,Amber,198005 - P8 16 units,16.0,Complete,,Croom 4
+Large Villages,76,Patrickswell,5,New Resi,0.731,0.731,22.0,16.082,Greenfield,1.0,Green,228017 - P8 24 units,24.0,Commencement Notice but no works,,Patrickswell 5
+Large Villages,77,Patrickswell,6,New Resi,0.39,0.39,22.0,8.58,Infill,1.0,Green,,,No Permission Sought,,Patrickswell 6
+Large Villages,83,Patrickswell,12,Town Centre,0.14,0.14,33.0,4.62,Infill,1.0,Green,,,No Permission ,,Patrickswell 12
+Large Villages,84,Patrickswell,13,Town Centre,0.61,0.61,33.0,20.13,Infill,1.0,Green,2560320,2.0,Permission Granted,,Patrickswell 13

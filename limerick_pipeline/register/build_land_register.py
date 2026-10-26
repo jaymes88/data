@@ -27,7 +27,7 @@ ASKEATON = 'in_zoning/askeaton_zoning.gpkg'   # Askeaton future residential zoni
 RZLT = 'in_zoning/rzlt2027.gpkg'       # residential zoned land tax, annual draft map 2027
 MIN_ZONED_HA = 0.1                     # drop zoning slivers smaller than this after clipping
 HOME_BUFFER_M = 15                     # existing homes (GeoDirectory) and their curtilage clipped out of zoned land
-COUNTY = 'in_county/rsca_settlements.gpkg'   # council county settlements audit (Development Plan 2022 settlements), received Oct 2026
+COUNTY = 'in_county/county_audit_2026.gpkg'  # council county settlements audit: Excel May 2026 placed on polygons + 2022 audit (sca_assemble.py)
 GEOD = 'in_geodir/limerick_geod_residential_points.gpkg'   # GeoDirectory residential address points (licensed; not committed)
 COMPLETE_SHARE = 0.95         # new built addresses / permitted units at which a scheme is treated as complete
 CLUSTER_MIN = 10              # new-build address clusters outside every parcel worth checking
@@ -69,15 +69,18 @@ A['notes'] = A.reconcile_action.fillna('')
 # council county settlements audit: sites in the smaller Development Plan settlements. Gross area and a density
 # (homes/ha) per site; capacity = area x density. Where a range is given (e.g. 10-22) the midpoint is used.
 if os.path.exists(COUNTY):
-    K = gpd.read_file(COUNTY, layer='RSCA').to_crs(ITM)
+    # county settlements audit, assembled by sca_assemble.py: council Excel (May 2026) sites placed on polygons, every
+    # polygon the council supplied (unnumbered where no Excel row is matched yet), and 2022 audit sites the Excel lacks
+    K = gpd.read_file(COUNTY, layer='sites').to_crs(ITM)
     K['geometry'] = K.geometry.make_valid().buffer(0)
     def _dens(v):
-        n = [float(x) for x in re.findall(r'\d+(?:\.\d+)?', str(v))]
+        n = [float(x) for x in re.findall(r'\d+(?:\.\d+)?', str(v))] if pd.notna(v) else []
         return sum(n) / len(n) if n else np.nan
     K['dph'] = K.Densities.map(_dens)
-    # The audit was drawn for the 2022 plan; some sites have since been partly built or permitted. A consent lying
-    # mostly inside a site (95%+) joins that site's parcel below; one that only overlaps it keeps its own land, so
-    # the site is clipped and its capacity scaled to what is left. Remnants under 0.05 ha are dropped.
+    K['cap'] = K.Capacity.where(K.Capacity.notna(), (K.Area * K.dph).round(1))
+    # The audit predates some consents. A consent lying mostly inside a site (95%+) joins that site's parcel below; one
+    # that only overlaps it keeps its own land, so the site is clipped and its capacity scaled to what is left.
+    # Remnants under 0.05 ha are dropped.
     K['orig_ha'] = K.area / 1e4
     K['clip_note'] = ''
     for _, r in P.iterrows():
@@ -90,23 +93,30 @@ if os.path.exists(COUNTY):
     K['left_ha'] = K.area / 1e4
     gone = K.left_ha < 0.05
     if gone.any():
-        print('county audit sites dropped (built or permitted since):', list(K.loc[gone, 'settlement_name'] + ' ' + K.loc[gone, 'Site No.'].astype(str)))
+        print('county audit sites dropped (built or permitted since):', list(K.loc[gone, 'settlement_name'] + ' ' + K.loc[gone, 'site_no']))
     K = K[~gone].copy()
     K['Area'] = (K.Area * K.left_ha / K.orig_ha).round(3)
-    K['site_id'] = ['CTY-' + re.sub(r'[^A-Z]', '', s.upper())[:12] + f'-{int(n)}' for s, n in zip(K.settlement_name, K['Site No.'])]
-    assert K.site_id.is_unique
+    K['cap'] = (K.cap * K.left_ha / K.orig_ha).round(0)
+    K['site_id'] = ['CTY-' + re.sub(r'[^A-Z]', '', s.upper())[:12] + '-' + re.sub(r'[^A-Za-z0-9]+', '-', str(n)).strip('-').upper()
+                    for s, n in zip(K.settlement_name, K.site_no)]
+    assert K.site_id.is_unique, K.site_id[K.site_id.duplicated()].tolist()
     tier = K.TAZ_Tier.map({1: 'Tier 1 (serviced)', 2: 'Tier 2 (serviceable)'}).fillna('')
+    ww = np.where(K.wastewater.notna(), 'wastewater ' + K.wastewater.fillna('').str.strip(), '')
+    status = (tier + '; ' + ww).str.strip('; ')
+    notes = (K.site_status.fillna('').radd('Site status: ').where(K.site_status.notna(), '') + '; '
+             + K.permission.fillna('').radd('Permission: ').where(K.permission.notna(), '') + '; '
+             + K.note.fillna('') + '; ' + K.placement.fillna('').radd('Placement: ') + K.clip_note).str.replace(r'(; )+', '; ', regex=True).str.strip('; ')
     KA = gpd.GeoDataFrame(dict(
         site_id=K.site_id, parcel_id=K.site_id, rsca=None, scope='County', neighbourhood='Outside city neighbourhoods',
-        local_name=K.settlement_name + ' – site ' + K['Site No.'].astype(int).astype(str), register_status=tier,
-        landowner=K.Ownership.fillna(''), zoning=K.Zone_Orig, site_type=K['Taz Type'].fillna(''), density_band=K.Densities.fillna('').astype(str),
-        area_ha=K.Area, capacity_units=(K.Area * K.dph).round(0), reconcile_action='', parcel_source='Council audit – county',
-        capacity_basis=np.where(K.dph.notna(), np.where(K.Densities.astype(str).str.contains('-'),
-                                'Council county audit: area x density (midpoint of range given)', 'Council county audit: area x density'), ''),
-        notes=(np.where(K.dph.isna(), 'County audit gives no density; zoned ' + K.Zone_Orig.astype(str), '') + K.clip_note).str.strip('; '),
-        geometry=K.geometry), crs=ITM)
+        local_name=K.settlement_name + ' – site ' + K.site_no, register_status=status,
+        landowner='', zoning=K.Zone_Orig.fillna(''), site_type=K.Taz_Type.fillna('').str.strip(), density_band=K.Densities.fillna('').astype(str),
+        area_ha=K.Area, capacity_units=K.cap, reconcile_action='', parcel_source='Council audit – county',
+        capacity_basis=np.where(K.Capacity.notna(), 'Council county audit capacity (' + K.source + ')',
+                                np.where(K.dph.notna(), 'Council county audit: area x density (' + K.source + ')', '')),
+        notes=notes, geometry=K.geometry), crs=ITM)
     A = pd.concat([A, KA], ignore_index=True)
-    print('county audit sites', len(KA), 'settlements', KA.local_name.str.split(' – ').str[0].nunique(), 'capacity', KA.capacity_units.sum())
+    print('county audit sites', len(KA), 'settlements', K.settlement_name.nunique(), 'capacity', KA.capacity_units.sum(),
+          'no capacity yet', int(KA.capacity_units.isna().sum()))
 
 # ------------------------------------------------------------------ permissions: which parcel each belongs to
 P['parcel_id'] = np.where(P.site_match.eq('Within site'), P.site_id, None)
@@ -438,6 +448,10 @@ parcels.loc[fill_p, 'capacity_units'] = pid[fill_p].map(pln_u)
 parcels.loc[fill_p, 'capacity_basis'] = 'Units of the application in planning (pending decision)'
 cc_u = unary_union(list(NBH[NBH.nbhd.eq('City Centre')].geometry)); city_u = unary_union(list(NBH.geometry))
 need = (parcels.capacity_units.fillna(0) <= 0) & ~(cons_p & no_live.eq(False))
+# county audit: a council capacity of 0 stands (land taken by a permission), and council polygons with no Excel row yet
+# wait for their figures rather than take an estimate (they still get density_estimate_units)
+cty = parcels.parcel_source.eq('Council audit – county')
+need &= ~(cty & (parcels.capacity_units.eq(0) | parcels.notes.fillna('').str.contains('fill in')))
 for i, r in parcels[need].iterrows():
     pt = r.geometry.representative_point()
     tier = 'City centre' if pt.within(cc_u) else 'City suburbs' if pt.within(city_u) else 'County towns and villages'

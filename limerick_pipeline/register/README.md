@@ -47,14 +47,18 @@ Rerun the build with each new extract (quarterly).
 
 ## County settlements audit
 
-`inputs/RSCA_settlementsDP2022.gpkg` is the council's audit of sites in the smaller Development Plan 2022 settlements, received October 2026. It holds 48 sites in 13 settlements, each with an area and a density. It loads as parcel source "Council audit – county", with IDs like `CTY-BRUFF-1`:
-- **Capacity:** area × the council density. Foynes gives a range (10-22), so the midpoint is used.
-- **Tiers:** the council's TAZ tier is kept in `register_status` (Tier 1 serviced, Tier 2 serviceable).
-- **Hospital site 5:** it is zoned Enterprise & Employment and has no density, so it carries the register's own area × density estimate and a note.
-- **Later consents:** the audit was drawn for the 2022 plan. A consent lying 95%+ inside a site joins that site's parcel. A consent that only overlaps a site keeps its own land, and the site is clipped and its capacity scaled to what is left. Sites left under 0.05 ha are dropped: 7 were, all covered by consents granted since.
-- **Interim estimates:** interim zoned-land parcels in the audited settlements are replaced by the audit.
+`inputs/county_audit_2026.gpkg` (layer `sites`) is the county audit the build loads, as parcel source "Council audit – county", with IDs like `CTY-RATHKEALE-3`. It is assembled from:
+- **Council capacity audit Excel (May 2026).** 126 sites in 15 settlements, with area, density, capacity, tier, wastewater, permission and site status. The Excel has no polygons, so `county_audit/sca_match.py` matched each site to a zoning polygon by area, zoning type and the permissions it names. Matches were kept where confirmed against the council's maps: all of Kilmallock; corrected placements in Rathkeale, Caherconlish and Castleconnell; Croom except site 4; and elsewhere only the high-confidence matches. 90 sites are placed.
+- **Council-supplied polygons** (`inputs/county_audit_2026_sources/*.gpkg`, including Askeaton). All of them are included. The ones with no Excel row yet carry site numbers U1, U2 and so on, or the number from the council map (Caherconlish 7, Castleconnell 9 and 10). They have no capacity until it's filled in: they count zero, but still carry `density_estimate_units`.
+- **2022 county audit** (`inputs/RSCA_settlementsDP2022.gpkg`) for what the Excel does not cover: Ballingarry, Bruree, Doon, Dromcolliher, Foynes, Glin, Pallasgreen and Pallaskenry, and Hospital site 5.
 
-The audit does not cover the Local Area Plan towns. Abbeyfeale, Adare, Caherconlish, Castleconnell, Croom, Kilmallock, Newcastle West, Patrickswell and Rathkeale stay on the interim estimate below. Validation checks C1–C3 report this.
+`inputs/county_audit_2026_unplaced.csv` lists the 34 Excel sites still without a polygon. To place one, draw or copy its polygon into the `sites` layer with the Excel values, then rebuild. **From now on the GeoPackage is the source: don't rerun `sca_assemble.py`, or manual placements will be overwritten.**
+
+When loading:
+- **Capacity:** the council's figure is used, and a council capacity of 0 stands. A consent lying 95%+ inside a site joins its parcel. A site a consent only partly overlaps is clipped, and its capacity is scaled to what is left. Sites left under 0.05 ha are dropped as built or permitted since.
+- **Other fields:** tier and wastewater go into `register_status`; site status, permission, the council's note and how the site was placed go into `notes`.
+
+Towns where some sites are unplaced keep the interim zoned-land estimate on the rest of their new residential zoning (validation check C2).
 
 ## Zoned land without consent (interim, for settlements without a council audit)
 

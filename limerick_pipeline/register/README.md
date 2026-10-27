@@ -5,7 +5,9 @@ One source for housing land in Limerick: the council's audit parcels (our update
 
 ## Start here: one file
 
-`Limerick_Developable_Land.gpkg` has **one layer, `developable_land`**, holding every parcel with all its fields.
+`Limerick_Developable_Land.gpkg` is the complete land register in one file:
+- **`developable_land`:** one polygon per parcel (452), with every parcel field (71 columns). That covers capacity, consented and future supply, homes by status, delivery by year, bedroom mix, energy, water and wastewater, density working, catchment and GeoDirectory figures, and `permission_list` as text.
+- **`permissions`:** one row per counted permission (262), with dates, status, tenure, route, bedroom mix and delivery years, linked to the polygons by `parcel_id`. In QGIS, add a join or a relation on `parcel_id`.
 - **`local_name`:** a standard description, e.g. "Caherdavin: 43 homes, houses – private scheme" or "Kilmallock: council audit site 4, 125 homes capacity". The original CIS heading or audit name is kept in `source_name`.
 - **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/removed_parcels.gpkg` (copied to `in_review/` for the build).
 - **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.

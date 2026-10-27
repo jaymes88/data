@@ -1,4 +1,5 @@
-"""One polygon file holding every parcel of the land register.
+"""One file holding the land register: layer developable_land (every parcel, all fields) and layer permissions
+(every permission, linked by parcel_id).
 
 Writes Limerick_Developable_Land_Review.gpkg with a single layer, developable_land: every parcel in the register with
 its land facts, capacity, consented and future supply, and its permissions written out as text, followed by blank review
@@ -24,13 +25,22 @@ ps = ps.sort_values(['src_order', 'catchment_type', 'catchment', 'parcel_id'])
 ps['permission_list'] = ps.parcel_id.map(perm_txt).fillna('')
 ps['settlement_or_area'] = ps.catchment
 
-cols = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catchment_type', 'lea', 'zoning', 'site_type',
+lead = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catchment_type', 'lea', 'zoning', 'site_type',
         'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'capacity_manual', 'density_estimate_units',
         'consented_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units', 'parcel_status',
-        'permissions', 'permission_list', 'est_q4_2026', 'est_2027', 'est_2028', 'est_2029', 'est_2030', 'est_2031_plus',
-        'energy', 'ue_water', 'ue_wastewater',
-        'phase', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'flag', 'notes', 'source_name']
+        'permissions', 'permission_list', 'complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units',
+        'expired_units', 'in_planning_units', 'est_q4_2026', 'est_2027', 'est_2028', 'est_2029', 'est_2030', 'est_2031_plus',
+        'mix_studio', 'mix_1bed', 'mix_2bed', 'mix_3bed', 'mix_4bed', 'mix_5plus', 'units_with_known_mix',
+        'energy', 'ue_water', 'ue_wastewater']
+# every other parcel field follows (density working, catchment detail, GeoDirectory, ids, notes)
+cols = lead + [c for c in ps.columns if c not in lead + ['geometry', 'fid', 'src_order']]
 R = ps[cols + ['geometry']].copy()
 R = gpd.GeoDataFrame(R, geometry='geometry', crs=ps.crs)
 R.to_file(OUT, layer='developable_land', driver='GPKG')
+# second layer: every counted permission (one row each), linked to the polygons by parcel_id
+PP = pd.read_sql("select * from parcel_permissions", sqlite3.connect(REG)).drop(columns=['fid'], errors='ignore')
+first = ['parcel_id', 'perm_id', 'planning_ref', 'register_ref', 'scheme', 'units', 'units_built', 'status', 'counts_toward_totals', 'relationship']
+PP = PP[first + [c for c in PP.columns if c not in first]].sort_values(['parcel_id', 'units'], ascending=[True, False])
+import pyogrio
+pyogrio.write_dataframe(PP, OUT, layer='permissions', driver='GPKG')
 print(len(R), 'parcels ->', OUT); print(R.parcel_source.value_counts().to_string()); print(R.parcel_status.value_counts().to_string())

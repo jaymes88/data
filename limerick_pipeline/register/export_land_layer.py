@@ -25,7 +25,7 @@ ps['permission_list'] = ps.parcel_id.map(perm_txt).fillna('')
 ps['settlement_or_area'] = ps.catchment
 
 cols = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catchment_type', 'lea', 'zoning', 'site_type',
-        'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'density_estimate_units',
+        'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'capacity_manual', 'density_estimate_units',
         'consented_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units', 'parcel_status',
         'permissions', 'permission_list', 'est_q4_2026', 'est_2027', 'est_2028', 'est_2029', 'est_2030', 'est_2031_plus',
         'servicing', 'svc_tier', 'svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water',

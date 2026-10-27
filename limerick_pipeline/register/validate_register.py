@@ -227,6 +227,13 @@ for ref, why in re.findall(r"'(\d+)': '((?:Granted)[^']*)'", dsrc):
 for ref in re.findall(r"'(\d{4,8})'", re.search(r"KPMG_ADD = \[([^\]]*)\]", open('sources.py').read()).group(1)):
     man.append(dict(input='Scheme added from KPMG audit', key=ref, value='live in register; missing from CIS exports'))
 mx = pd.read_csv('planning_file_mix.csv', dtype={'ref': str}) if os.path.exists('planning_file_mix.csv') else pd.DataFrame()
+import os as _os
+if _os.path.exists('in_review/manual_capacity.csv'):
+    for _, m in pd.read_csv('in_review/manual_capacity.csv').iterrows():
+        man.append(dict(input='Manual capacity override', key=m.parcel_id, value=f'{int(m.capacity_units):,} homes, set {m.set_on} by {m.set_by}: {m.reason}'))
+if _os.path.exists('in_review/removed_parcels.gpkg'):
+    for _, m in gpd.read_file('in_review/removed_parcels.gpkg').iterrows():
+        man.append(dict(input='Parcel removed at review', key=m.parcel_id, value=str(m.removal_reason)))
 for _, r in mx.iterrows():
     beds = r[['studio', 'b1', 'b2', 'b3', 'b4', 'b5']].sum()
     ok = beds == r.total and r.houses + r.apartments == r.total

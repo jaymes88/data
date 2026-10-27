@@ -10,6 +10,8 @@ One source for housing land in Limerick: the council's audit parcels (our update
 - **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/removed_parcels.gpkg` (copied to `in_review/` for the build).
 - **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.
 
+- **Manual capacities:** `inputs/manual_capacity.csv` (copied to `in_review/` for the build) holds capacities set by hand, each with a reason, who set it and when. On those parcels `capacity_manual` = Yes, `capacity_basis` starts "MANUAL OVERRIDE", and the note records the old and new figures. The first is CITY-107, the masterplanned city-centre mixed-use site of about 60 ha, set to 2,500 homes on 27 Oct 2026.
+
 Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg`) or source data (`inputs/`).
 
 ## Tables

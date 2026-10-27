@@ -543,6 +543,22 @@ for i, r in parcels.iterrows():
         parcels.at[i, 'density_tier'], parcels.at[i, 'density_dph'] = tier, DENS[tier]
         parcels.at[i, 'density_basis'] = (f'{DENS[tier]:.0f} homes/ha = median of {DENS_N.get(tier, 0)} permitted Limerick schemes of 10+ homes in '
                                           f'{tier.lower()}; applied to {"developable" if pd.notna(r.developable_area_ha) and r.developable_area_ha > 0 else f"mapped area x {NET:.2f}"} for density_estimate_units only')
+# manual capacity overrides (in_review/manual_capacity.csv): the analyst's figure replaces any other, with the reason noted
+MANUAL = 'in_review/manual_capacity.csv'
+parcels['capacity_manual'] = ''
+if os.path.exists(MANUAL):
+    MC = pd.read_csv(MANUAL, dtype={'parcel_id': str})
+    for _, m in MC.iterrows():
+        k = parcels.index[parcels.parcel_id.eq(m.parcel_id)]
+        if not len(k):
+            print('manual capacity: parcel not found', m.parcel_id); continue
+        was = parcels.loc[k[0], 'capacity_units']
+        parcels.loc[k, 'capacity_units'] = float(m.capacity_units)
+        parcels.loc[k, 'capacity_basis'] = f'MANUAL OVERRIDE ({m.set_by}, {m.set_on}): {m.reason}'
+        parcels.loc[k, 'capacity_manual'] = 'Yes'
+        parcels.loc[k, 'notes'] = (parcels.loc[k, 'notes'].fillna('') + f'; capacity set manually to {int(m.capacity_units):,} homes on {m.set_on}'
+                                   f' (was {was:,.0f}): {m.reason}').str.strip('; ')
+        print('manual capacity:', m.parcel_id, was, '->', m.capacity_units)
 print('capacity filled: expired', int(fill_e.sum()), 'in planning', int(fill_p.sum()), 'area estimate', int(need.sum()),
       'units', parcels.loc[fill_e | fill_p | need, 'capacity_units'].sum())
 
@@ -679,6 +695,7 @@ DICT = [
     ('parcels', 'svc_tier / svc_lighting … svc_surface_water', 'Council audit servicing: updated tier (1 serviced, 2 serviceable) and Y / S for each service.'),
     ('parcels', 'ue_water / ue_wastewater', 'Uisce Éireann capacity as recorded in the council audit (Y / colour status).'),
     ('parcels', 'flood_risk / energy / near_* / school_requirements / council_site_status', 'Other council audit fields: flood risk, energy infrastructure, distance to public transport and schools, school requirements, and the council site status (June/July 2026).'),
+    ('parcels', 'capacity_manual', 'Yes where the capacity was set by hand (inputs/manual_capacity.csv); capacity_basis and notes give the reason and date.'),
     ('parcels', 'density_estimate_units', 'Indicative homes for the parcel from its area x the local median density of permitted Limerick schemes (density_tier, density_dph). Filled for every parcel so all land can be compared on one basis. Not used in the supply totals; on consent parcels the consented units are the figure that counts.'),
     ('parcel_summary', 'capacity_used', 'The unit figure the parcel is planned on: council or zoning capacity where there is one, otherwise the consented units. Always filled where the parcel has units.'),
     ('active_parcels', '(all fields)', 'parcel_summary without Finished parcels: the land still to deliver homes. Use this layer for maps of future supply.'),

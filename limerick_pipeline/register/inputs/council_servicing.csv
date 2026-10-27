@@ -1,0 +1,274 @@
+scope,settlement,site,excel_area,svc_lighting,svc_footpaths,svc_road_access,svc_water,svc_foul,svc_surface_water,svc_tier,ue_water,ue_wastewater,flood_risk,energy,near_public_transport,near_primary_school,near_secondary_school,school_requirements,council_site_status,servicing
+City,Limerick City and Suburbs,1,2.408,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,1.5/3km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,2,2.395,Y,S,Y,Y,Y,Y,2,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviceable: footpaths
+City,Limerick City and Suburbs,3,2.013,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,5,2.729,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z3,4.023,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z4,4.324,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,7,11.8,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,6 / U9,0.651,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,8,2.772,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z5,1.781,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,9 / Z6 / Merge with 10/11,1.07,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,12 / U10,9.43102,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z7,,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,Z9,3.7,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,15,3.003,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,16,0.436,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,13,,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,14,1.334,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,20,0.641,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,21,0.172,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,,,,,Serviced
+City,Limerick City and Suburbs,22/ Z1,3.919,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,23,0.148,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,24,0.24879,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,25,0.125,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,St. Anne's Court,,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,41,0.106,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,40,0.132,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,30,0.47555,S,S,S,S,S,S,2,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+City,Limerick City and Suburbs,29,1.88908,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,28,0.586,S,S,S,S,S,S,2,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+City,Limerick City and Suburbs,26,2.196,S,S,S,S,S,S,2,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+City,Limerick City and Suburbs,27,2.326,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,32,4.273,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,31,1.061,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,33,2.57,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,34,1.33,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,43,4.191,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,44,0.632,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,45,0.452,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,46,0.912,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,47,0.373,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,49 / U21,0.922,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,50,0.704,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,51,0.272,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,52,0.54824,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,158,0.938,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z33,2.17,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,53,2.401,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,54,1.435,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,U31,0.093,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,56 / U30,4.644,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,57,12.36,Y,Y,Y,Y,Y,Y,1,Y,Y,,B - 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,66,0.191,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,65,1.181,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,67,2.056,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z14,0.18,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,69,8.746,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,70,8.56,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,71,3.167,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z15,0.152,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,72/ Z16,16.05,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z17,3.76,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,74,0.543,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,75,0.227,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,76,6.603,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,77,0.727,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,78,0.919,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,79,2.384,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,80,0.077,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,81,0.156,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,82,0.165,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,83,0.124,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,84,0.043,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,86,0.676,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,87,0.136,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,88,0.348,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,89,0.089,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,91,1.38,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z26,1.391,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z27,0.566,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z25,0.941,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,92,0.079,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,93,0.056,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,95,0.104,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,97,0.061,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,99,0.065,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,101,0.157,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200kVA - 1MW,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,102,0.129,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,104,0.074,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,105,0.21,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,106,0.14,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,107,17.88,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,108,0.297,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,109,0.26,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,110,0.126,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,111,0.703,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,112,1.346 ,,,,,,,,,,,,,,,,,Not assessed
+City,Limerick City and Suburbs,113,0.207,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,114,0.66097,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z18,24.503,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,115 / Z19,0.952,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,116,0.133,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5km/3km,1.5km/3km,,,Serviced
+City,Limerick City and Suburbs,117,0.181,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,118,0.506,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,119,1.074,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,120,0.755,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,121,0.563,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,123,0.467,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,124,0.139,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,125,1.413,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z20,4.459,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,127,0.508,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z21,1.594,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,128 / Z22,4.75318,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,129,2.208,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,130,0.144,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,131,0.252,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,132,0.706,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,U36,0.073,Y,Y,Y,Y,Y,Y,1,,,,,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,133 / U37,9.483,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,160,1.168,S,S,Y,S,S,S,2,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,1.5/3km,,,"Serviceable: lighting, footpaths, water, foul, surface water"
+City,Limerick City and Suburbs,135,0.182,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,134,0.606,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,136,8.559,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,137,2.42,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,Z28,1.768,S,S,S,S,S,S,2,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+City,Limerick City and Suburbs,139,0.285,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,141,0.516,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,144 / Z31,31.95,Y,Y,Y,Y,Y,S,2,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviceable: surface water
+City,Limerick City and Suburbs,145/ Z30,1.326,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,146,0.632,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,147/ Z30,1.03808,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,148,5.065,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,149,0.939,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,153,2.521,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,154,0.743,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,155 / U38,0.34,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviced
+City,Limerick City and Suburbs,151 / U40,13.45,Y,Y,Y,Y,Y,S,2,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviceable: surface water
+City,Limerick City and Suburbs,152 / U39,4.12,Y,Y,Y,Y,S,Y,2,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,1.5/3km,,,Serviceable: foul
+City,Limerick City and Suburbs,156,0.584,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,1.5/3km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,Z23,17.137,S,S,Y,Y,S,S,2,,,,,1.5/3km,1.5/3km,1.5/3km,,,"Serviceable: lighting, footpaths, foul, surface water"
+City,Limerick City and Suburbs,60,1.133,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,61,2.467,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,62,1.582,Y,Y,Y,Y,Y,Y,1,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,63,0.467,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,159,2.734,Y,Y,Y,Y,Y,Y,1,Y,Y,,C - 200 kVA - 1 MVA,<1.5km,1.5/3km,<1.5km,,,Serviced
+City,Limerick City and Suburbs,143,4.38,S,S,Y,Y,Y,Y,2,Y,Y,,A - 0 - 50kVA,<1.5km,<1.5km,<1.5km,,,"Serviceable: lighting, footpaths"
+County,Newcastle West,1,0.5,Y,Y,Y,Y,Y,S,2,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviceable: surface water
+County,Newcastle West,2,0.4,S,S,Y,S,S,S,2,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,"Serviceable: lighting, footpaths, water, foul, surface water"
+County,Newcastle West,3,1.2,S,S,Y,S,S,S,2,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,"Serviceable: lighting, footpaths, water, foul, surface water"
+County,Newcastle West,4,0.8,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,5,12.5,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,Partially Development - Reduced Area Available,Serviced
+County,Newcastle West,6,1.5,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,Partially Development - Reduced Area Available,Serviced
+County,Newcastle West,7,0.3,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,8,0.4,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,Permission Sought,Serviced
+County,Newcastle West,9,1.9,S,S,Y,S,S,S,2,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,"Serviceable: lighting, footpaths, water, foul, surface water"
+County,Newcastle West,10,1.2,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,11,30.5,,,,,,,,Amber,Red,No,,,,,,No Permission,Not assessed
+County,Newcastle West,11A,*5.9,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B 50 - 200 kVA,<1.5km,1.5/3km,<1.5km,,No Permission,Serviced
+County,Newcastle West,11B,*2.8,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,11C,*20.2,S,S,S,S,S,S,2,Amber,Red,No,B 50 - 200 kVA,<1.5km,1.5/3km,<1.5km,,No Permission,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+County,Newcastle West,11D,*1.38,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,1.5/3km,1.5/3km,,No Permission,Serviced
+County,Newcastle West,12,0.8,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,1.5/3km,1.5/3km,,No Permission,Serviced
+County,Newcastle West,13,2.1,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,Permission Granted,Serviced
+County,Newcastle West,14,1.3,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,Permission Granted,Serviced
+County,Newcastle West,15,3,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,16,2.1,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Newcastle West,17,1.12,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,C 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,1,0.57,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,2,1.05,Y,Y,Y,Y,Y,Y,1,Amber,Green,Yes,C. 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,3,0.26,Y,Y,Y,Y,Y,Y,1,Amber,Green,Yes,C. 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,4,0.38,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,5,4.2,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,Permission Granted,Serviced
+County,Abbeyfeale,6,2.7,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,7,1.0,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,8,1.4,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,1.5/3km,,No Permission,Serviced
+County,Abbeyfeale,9,1.5,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Abbeyfeale,10,0.5,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Castleconnell,1,0.26,Y,Y,Y,Y,Y,Y,1,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Castleconnell,2,0.63,Y,Y,Y,Y,Y,Y,1,Green,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Castleconnell,3,0.62,Y,Y,Y,Y,Y,Y,1,Green,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Castleconnell,4,6.1,Y,Y,Y,Y,Y,S,2,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,Commenced -Reduced area available,Serviceable: surface water
+County,Castleconnell,5,0.49,Y,Y,Y,Y,Y,S,2,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,Permission Granted,Serviceable: surface water
+County,Castleconnell,6,1.1,S,S,Y,Y,Y,S,2,Green,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,,,No Permission,"Serviceable: lighting, footpaths, surface water"
+County,Castleconnell,7,1.4,S,S,Y,Y,Y,S,2,Green,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,,,No Permission,"Serviceable: lighting, footpaths, surface water"
+County,Castleconnell,8,1.6,S,S,Y,Y,Y,S,2,Green,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,,,No Permission,"Serviceable: lighting, footpaths, surface water"
+County,Caherconlish,1,3.58,Y,Y,Y,Y,Y,Y,1,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Caherconlish,2,0.439,Y,Y,Y,Y,Y,Y,1,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Caherconlish,3,0.234,Y,Y,Y,Y,Y,Y,1,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Caherconlish,4,2.094,S,S,Y,Y,S,S,2,Green,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,,,No Permission,"Serviceable: lighting, footpaths, foul, surface water"
+County,Caherconlish,5,2.085,Y,Y,Y,Y,Y,Y,1,Green,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Caherconlish,6,0.0,Y,Y,Y,Y,Y,Y,1,Green,Green,No,,<1.5km,<1.5km,,,Complete,Serviced
+County,Rathkeale,1,0.4,Y,Y,Y,Y,Y,S,2,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviceable: surface water
+County,Rathkeale,2,1.039,Y,Y,Y,Y,Y,S,2,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviceable: surface water
+County,Rathkeale,3,1.57,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,4,0.36,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,C. 200 kVA - 1 MVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,5,0.601,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,6,0.82,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,7,1.27,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,8,1.35,Y,Y,Y,Y,Y,S,2,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviceable: surface water
+County,Rathkeale,9,0.427,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,B. 50 - 200 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Rathkeale,10,1.785,Y,S,Y,Y,Y,Y,2,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviceable: footpaths
+County,Kilmallock,1,3.88,Y,Y,Y,S,Y,Y,2,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,Under Construction,Serviceable: water
+County,Kilmallock,2,3.79,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Kilmallock,8,3.73,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Kilmallock,9,5.33,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,No Permission,Serviced
+County,Kilmallock,10,4.24,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A. 0 - 50 kVA,<1.5km,<1.5km,<1.5km,,Under Construction,Serviced
+County,Adare,1a,1.1,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Adare,1b,0.98,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,In Use - Reduced Area Available,Serviced
+County,Adare,2,4.8,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Adare,3,0.54,,,,,,,,,,,,,,,,Complete,Not assessed
+County,Adare,4,2.6,Y,Y,Y,Y,Y,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviceable: surface water
+County,Adare,5,1.7,Y,Y,Y,Y,Y,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviceable: surface water
+County,Adare,6,0.338,Y,Y,Y,Y,Y,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviceable: surface water
+County,Adare,7,1.9,Y,Y,Y,Y,S,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Withdrawn,"Serviceable: foul, surface water"
+County,Adare,8,1.15,Y,Y,Y,Y,S,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,"Serviceable: foul, surface water"
+County,Adare,9,2.3,Y,Y,Y,Y,S,S,2,Green,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,"Serviceable: foul, surface water"
+County,Adare,10,0.8,,,,,,,,,,,,,,,,Complete,Not assessed
+County,Askeaton,1,1.233,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 196 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,2 & 3 & 4,6.516,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 142 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,5,2.334,S,S,S,S,S,S,2,Amber,Red,No,B - 175 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+County,Askeaton,6,1.018,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 71 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,7,1.341,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 185 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,8,0.641,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 185 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,10,4.719,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 100 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Askeaton,9,2.459,S,S,S,S,S,S,2,Amber,Red,No,B - 100 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,"Serviceable: lighting, footpaths, road access, water, foul, surface water"
+County,Askeaton,11,3.36,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,B - 100 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Bruff,1,3.277,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Bruff,2,0.679,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Sought,Serviced
+County,Bruff,4,0.234,Y,Y,Y,Y,Y,Y,1,Amber,Green,Yes,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Bruff,3,1.411,Y,Y,Y,Y,Y,Y,1,Amber,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Cappamore,1,1.327,,,,,,,,,,No,A - 0 kVA,,,,,Under Construction,Not assessed
+County,Cappamore,2,0.66,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Cappamore,3,1.012,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Under Construction,Serviced
+County,Cappamore,4,0.289,,,,,,,,,,No,A - 0 kVA,,,,,Under Construction,Not assessed
+County,Cappamore,5,0.18,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Cappamore,6,0.116,,,,,,,,,,No,A - 0 kVA,,,,,Under Construction,Not assessed
+County,Croom,1,0.494,S,S,Y,Y,Y,Y,1,Green,Amber,No,A - 12 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,"Serviceable: lighting, footpaths"
+County,Croom,2,2.951,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 12 kVA,<1.5km,<1.5km,<1.5km,,Permission Granted,Serviced
+County,Croom,3,0.369,,,,,,,,,,,,,,,,Complete,Not assessed
+County,Croom,4,0.539,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,B - 116 kVA,<1.5km,<1.5km,<1.5km,,Complete,Serviced
+County,Croom,5,4.06,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 12 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Croom,6,2.007,,,,,,,,,,,,,,,,Complete,Not assessed
+County,Croom,7,2.677,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,A - 12 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Croom,8,0.3042,Y,Y,Y,Y,Y,Y,1,Green,Amber,No,B - 143 kVA,<1.5km,<1.5km,1.5/3km,,Permission Granted,Serviced
+County,Hospital,1,0.627,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Hospital,2,1.001,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Hospital,3,0.674,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,1.5km/3km,<1.5km,,No Permission Sought,Serviced
+County,Hospital,4,1.019,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Kilfinane,1,0.415,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,Under Construction,Serviced
+County,Kilfinane,2,0.317,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Kilfinane,3,0.821,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Kilfinane,4,0.713,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Kilfinane,5,1.547,Y,Y,Y,Y,Y,Y,1,Amber,Amber,No,A - 0 kVA,<1.5km,<1.5km,<1.5km,,No Permission Sought,Serviced
+County,Murroe,1,1.808,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Murroe,2,0.997,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Murroe,3,1.082,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Murroe,4,1.938,Y,Y,Y,Y,Y,Y,1,Amber,Red,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Patrickswell,1,4.086,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Patrickswell,2,2.935,S,S,Y,S,S,S,2,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,"Serviceable: lighting, footpaths, water, foul, surface water"
+County,Patrickswell,14,4.773,S,S,Y,S,Y,S,2,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Commencement Notice but no works,"Serviceable: lighting, footpaths, water, surface water"
+County,Patrickswell,17,0.4,Y,Y,Y,Y,S,S,2,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission,"Serviceable: foul, surface water"
+County,Patrickswell,3,0.42,Y,Y,Y,Y,Y,S,2,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviceable: surface water
+County,Patrickswell,4,0.483,Y,Y,Y,Y,Y,S,2,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Complete,Serviceable: surface water
+County,Patrickswell,5,0.731,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Commencement Notice but no works,Serviced
+County,Patrickswell,6,0.39,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Patrickswell,7,2.84,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Under Construction,Serviced
+County,Patrickswell,8,1.772,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced
+County,Patrickswell,9,2.398,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Under Construction,Serviced
+County,Patrickswell,10,0.867,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,No Permission Sought,Serviced
+County,Patrickswell,11,0.386,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Complete,Serviced
+County,Patrickswell,12,0.14,Y,Y,Y,Y,Y,Y,1,Green,Green,Yes,A - 0 kVA,<1.5km,<1.5km,,,No Permission,Serviced
+County,Patrickswell,13,0.61,Y,Y,Y,Y,Y,Y,1,Green,Green,No,A - 0 kVA,<1.5km,<1.5km,,,Permission Granted,Serviced

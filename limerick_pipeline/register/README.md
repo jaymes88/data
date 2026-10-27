@@ -69,6 +69,13 @@ With a GeoDirectory residential address extract at `in_geodir/limerick_geod_resi
 
 Rerun the build with each new extract (quarterly).
 
+## Servicing (council capacity audit)
+
+`county_audit/council_servicing.py` reads the servicing and infrastructure columns from the council Excel (May 2026) into `inputs/council_servicing.csv`. These are lighting, footpaths, road access, water, foul and surface water (Y = serviced, S = serviceable), the updated tier, Uisce Éireann water and wastewater capacity, flood risk, energy infrastructure, distance to public transport and schools, school requirements, and site status.
+- **City sites** join on `SCA Site No.`, which is our `rsca` number. Where the council writes a combined reference such as '72/ Z16', the first number is used, provided our site is no more than 30% larger than the council's area.
+- **County sites** join on settlement and site number. A split part (1.1, 5a) takes its site's row.
+- **`servicing` field:** a one-line summary of each parcel, either Serviced, Serviceable: <items>, or Not assessed.
+
 ## County settlements audit
 
 **Council polygons (23 Oct 2026).** `inputs/county_audit_2026_sources/DevPlan_Variation_Settlement_RSCA_23_10_26.gpkg` has one layer per settlement, with the Excel figures joined, for Abbeyfeale, Askeaton, Caherconlish, Cappamore, Castleconnell, Croom, Kilmallock, Newcastle West and Rathkeale.

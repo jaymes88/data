@@ -28,6 +28,9 @@ cols = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catch
         'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'density_estimate_units',
         'consented_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units', 'parcel_status',
         'permissions', 'permission_list', 'est_q4_2026', 'est_2027', 'est_2028', 'est_2029', 'est_2030', 'est_2031_plus',
+        'servicing', 'svc_tier', 'svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water',
+        'ue_water', 'ue_wastewater', 'flood_risk', 'energy', 'near_public_transport', 'near_primary_school', 'near_secondary_school',
+        'school_requirements', 'council_site_status',
         'phase', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'flag', 'notes']
 R = ps[cols + ['geometry']].copy()
 # review columns, filled in by the analyst

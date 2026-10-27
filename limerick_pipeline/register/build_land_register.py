@@ -324,6 +324,60 @@ cap_ov = pd.to_numeric(parcels.review_capacity, errors='coerce')
 parcels.loc[cap_ov.notna(), 'capacity_units'] = cap_ov[cap_ov.notna()]
 parcels.loc[cap_ov.notna(), 'capacity_basis'] = 'Analyst review capacity'
 print('review:', parcels.review_status.value_counts().to_dict(), 'removed', sorted(gone_ids))
+# servicing and infrastructure from the council capacity audit Excel (council_servicing.py): city sites by rsca number,
+# county sites by settlement + site number (a split part such as 1.1 or 5a takes its site's row)
+SVC = 'in_county/council_servicing.csv'
+SVC_COLS = ['servicing', 'svc_tier', 'svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water',
+            'ue_water', 'ue_wastewater', 'flood_risk', 'energy', 'near_public_transport', 'near_primary_school', 'near_secondary_school',
+            'school_requirements', 'council_site_status']
+for c in SVC_COLS:
+    parcels[c] = ''
+if os.path.exists(SVC):
+    SV = pd.read_csv(SVC, dtype=str).fillna('')
+    city = SV[SV.scope.eq('City')].drop_duplicates('site').set_index('site')
+    # the council writes combined references ('6 / U9', '72/ Z16'): also key on the first number, used where our site is
+    # no more than 30% larger than the council's area (smaller is fine: partly built sites shrink)
+    first = SV[SV.scope.eq('City')].assign(k=lambda d: d.site.str.extract(r'^(\d+)')[0]).dropna(subset=['k'])
+    first = first[first.site.ne(first.k)].drop_duplicates('k').set_index('k')
+    cty = SV[SV.scope.eq('County')].drop_duplicates(['settlement', 'site']).set_index(['settlement', 'site'])
+    def cty_row(town, s):
+        keys = [s, re.sub(r'(\.\d+|[a-zA-Z])$', '', s)]
+        keys += [k for (t, k) in cty.index if t == town and '&' in k and s in [p.strip() for p in k.split('&')]]
+        for k in keys:
+            if (town, k) in cty.index:
+                r = cty.loc[(town, k)]
+                if r.servicing not in ('', 'Not assessed'):
+                    return r
+                subs = cty[[t == town and re.fullmatch(re.escape(k) + r'[A-Z]', x) is not None for t, x in cty.index]]
+                if len(subs):                                   # a parent row with no servicing: take its lettered parts
+                    out = subs.iloc[0].copy()
+                    for c in ['svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water']:
+                        v = set(subs[c].str.upper().str[:1]) - {''}
+                        out[c] = 'S' if 'S' in v else ('Y' if v == {'Y'} else '/'.join(sorted(v)))
+                    out['servicing'] = 'From sites ' + ', '.join(x for _, x in subs.index) + ': ' + '; '.join(sorted(set(subs.servicing)))
+                    return out
+                return r
+        return None
+    hit = 0
+    for i, r in parcels.iterrows():
+        row = None
+        if r.parcel_source == 'Council audit' and pd.notna(r.rsca) and str(r.rsca).strip() not in ('', 'nan', 'None'):
+            k = re.sub(r'\.0$', '', str(r.rsca).strip())
+            row = city.loc[k] if k in city.index else None
+            if row is None and k in first.index:
+                xa = pd.to_numeric(first.at[k, 'excel_area'], errors='coerce')
+                if pd.isna(xa) or r.mapped_area_ha <= 1.3 * xa:
+                    row = first.loc[k].copy()
+                    row['servicing'] = row.servicing + f' (council ref {first.at[k, "site"]})'
+        elif r.parcel_source == 'Council audit – county' and ' – site ' in str(r.local_name):
+            town, s = str(r.local_name).split(' – site ', 1)
+            row = cty_row(town, s.strip())
+        if row is not None:
+            hit += 1
+            for c in SVC_COLS:
+                parcels.at[i, c] = row[c]
+    parcels.loc[parcels.parcel_source.str.startswith('Council audit') & parcels.servicing.eq(''), 'servicing'] = 'Not assessed (no council servicing data)'
+    print('servicing attached to', hit, 'council audit parcels;', parcels.servicing.str.split(':').str[0].value_counts().to_dict())
 assert parcels.parcel_id.is_unique
 
 # ------------------------------------------------------------------ study catchments
@@ -605,6 +659,10 @@ DICT = [
     ('parcel_permissions', 'mix_source / mix_studio … mix_5plus', 'Bedroom mix of the permission and where it comes from (CIS, register description, or planning file documents such as planner\u2019s reports and schedules of accommodation). Blank where not known.'),
     ('parcel_summary', 'mix_* / units_with_known_mix', 'Bedroom mix summed over the parcel\u2019s counted permissions, and the units it covers (the rest have no known mix).'),
     ('parcel_permissions', 'geod_new_vacant', 'Of the built addresses credited to the permission, how many GeoDirectory marks vacant.'),
+    ('parcels', 'servicing', 'Council servicing assessment summarised: Serviced (lighting, footpaths, road access, water, foul and surface water all Y), Serviceable: <items> (S = serviceable), or Not assessed. From the council capacity audit Excel, May 2026.'),
+    ('parcels', 'svc_tier / svc_lighting … svc_surface_water', 'Council audit servicing: updated tier (1 serviced, 2 serviceable) and Y / S for each service.'),
+    ('parcels', 'ue_water / ue_wastewater', 'Uisce Éireann capacity as recorded in the council audit (Y / colour status).'),
+    ('parcels', 'flood_risk / energy / near_* / school_requirements / council_site_status', 'Other council audit fields: flood risk, energy infrastructure, distance to public transport and schools, school requirements, and the council site status (June/July 2026).'),
     ('parcels', 'density_estimate_units', 'Indicative homes for the parcel from its area x the local median density of permitted Limerick schemes (density_tier, density_dph). Filled for every parcel so all land can be compared on one basis. Not used in the supply totals; on consent parcels the consented units are the figure that counts.'),
     ('parcel_summary', 'capacity_used', 'The unit figure the parcel is planned on: council or zoning capacity where there is one, otherwise the consented units. Always filled where the parcel has units.'),
     ('active_parcels', '(all fields)', 'parcel_summary without Finished parcels: the land still to deliver homes. Use this layer for maps of future supply.'),

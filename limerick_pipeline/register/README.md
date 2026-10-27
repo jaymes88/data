@@ -5,9 +5,9 @@ One source for housing land in Limerick: the council's audit parcels (our update
 
 ## Start here: one file
 
-`Limerick_Developable_Land_Review.gpkg` has **one layer, `developable_land`**, holding every parcel with all its fields.
+`Limerick_Developable_Land.gpkg` has **one layer, `developable_land`**, holding every parcel with all its fields.
 - **`local_name`:** a standard description, e.g. "Caherdavin: 43 homes, houses – private scheme" or "Kilmallock: council audit site 4, 125 homes capacity". The original CIS heading or audit name is kept in `source_name`.
-- **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/review/review_removed.gpkg`.
+- **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/removed_parcels.gpkg` (copied to `in_review/` for the build).
 - **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.
 
 Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg`) or source data (`inputs/`).

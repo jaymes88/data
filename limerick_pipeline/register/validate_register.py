@@ -85,8 +85,8 @@ m = sup[['perm_id', 'units', 'status']].merge(pp[['perm_id', 'units', 'status_ci
 # permissions the analyst removed at review are expected to be missing from the register
 import os
 rmv = set()
-if os.path.exists('in_review/review_removed.gpkg'):
-    rr = gpd.read_file('in_review/review_removed.gpkg')
+if os.path.exists('in_review/removed_parcels.gpkg'):
+    rr = gpd.read_file('in_review/removed_parcels.gpkg')
     refs = {x for v in rr.planning_refs.fillna('') for x in v.split(';') if x}
     rmv = set(sup[sup.planning_ref.astype(str).isin(refs) | sup.register_ref.astype(str).isin(refs)].perm_id)
 diff = m[((m._merge != 'both') | (m.units_supply.fillna(-1) != m.units_register.fillna(-1))) & ~m.perm_id.isin(rmv)]

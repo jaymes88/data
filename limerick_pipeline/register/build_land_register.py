@@ -17,7 +17,7 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 ITM = 2157
-REMOVED = 'in_review/review_removed.gpkg'       # parcels the analyst removed: their land and permissions stay out of the register
+REMOVED = 'in_review/removed_parcels.gpkg'       # parcels the analyst removed: their land and permissions stay out of the register
 SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
 XL = 'Limerick_Housing_Land_Register.xlsx'
@@ -44,7 +44,7 @@ for f in (OUT,):
 
 S = gpd.read_file(SUP, layer='sites').to_crs(ITM)
 P = gpd.read_file(SUP, layer='permissions').to_crs(ITM)
-RM = gpd.read_file(REMOVED).to_crs(ITM) if os.path.exists(REMOVED) else gpd.GeoDataFrame(columns=['parcel_id', 'planning_refs', 'review_notes', 'geometry'], geometry='geometry', crs=ITM)
+RM = gpd.read_file(REMOVED).to_crs(ITM) if os.path.exists(REMOVED) else gpd.GeoDataFrame(columns=['parcel_id', 'planning_refs', 'removal_reason', 'geometry'], geometry='geometry', crs=ITM)
 rm_refs = {x for v in RM.planning_refs.fillna('') for x in v.split(';') if x}
 REMOVED_PERMS = P[P.planning_ref.astype(str).isin(rm_refs) | P.register_ref.astype(str).isin(rm_refs)].copy()
 P = P[~P.perm_id.isin(REMOVED_PERMS.perm_id)].copy()
@@ -647,7 +647,7 @@ lists = pd.DataFrame([('status', s, 'Yes' if s in LIVE else 'No') for s in ['Com
 pyogrio.write_dataframe(lists, OUT, layer='lookup_values', driver='GPKG')
 DICT = [
     ('parcels', 'parcel_id', 'Unique parcel key. CITY-<rsca> for council audit parcels; PC-<planning ref> for consent parcels outside the audit. Never reuse a retired id.'),
-    ('parcels', 'parcel_source', 'Council audit (3 sites removed in the council review and reinstated by us say so in notes) / Planning consent – not in council audit / Zoned land – no consent (estimate: new residential zoning outside every other parcel and not built on, until the county audit replaces it). County audit parcels: Council audit – county.'),
+    ('parcels', 'parcel_source', 'Council audit (3 sites the council dropped and we reinstated say so in notes) / Planning consent – not in council audit / Zoned land – no consent (estimate: new residential zoning outside every other parcel and not built on, until the county audit replaces it). County audit parcels: Council audit – county.'),
     ('parcels', 'scope', 'City or County.'),
     ('parcels', 'rsca', 'Council audit reference (audit parcels only).'),
     ('parcels', 'capacity_units', 'Homes the parcel can take: council estimate on audit parcels, zoning estimate on zoned-land parcels. Blank on consent parcels: their capacity is the consented units.'),

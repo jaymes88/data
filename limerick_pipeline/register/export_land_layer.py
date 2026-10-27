@@ -9,7 +9,7 @@ import sqlite3
 import pandas as pd, geopandas as gpd
 
 REG = 'Limerick_Housing_Land_Register.gpkg'
-OUT = 'Limerick_Developable_Land_Review.gpkg'
+OUT = 'Limerick_Developable_Land.gpkg'
 
 ps = gpd.read_file(REG, layer='parcel_summary')
 pp = pd.read_sql("select * from parcel_permissions where counts_toward_totals = 'Yes'", sqlite3.connect(REG))

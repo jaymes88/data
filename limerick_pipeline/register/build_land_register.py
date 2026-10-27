@@ -241,6 +241,12 @@ if os.path.exists(ZONING):
                               geometry=part))
     if zrows:
         Z = gpd.GeoDataFrame(zrows, crs=ITM)
+        # towns the council has audited with its own polygons (settlement audit file, Oct 2026): no interim estimate there
+        if os.path.exists(COUNTY):
+            audited = set(gpd.read_file(COUNTY, layer='sites').query("source == 'Council settlement audit polygons (Oct 2026)'").settlement_name)
+            drop = Z.plan.apply(lambda p: any(str(p).lower().startswith(t.lower()) for t in audited))
+            print('interim zoned land dropped in council-audited towns:', int(drop.sum()), 'pieces', round(Z[drop].area.sum() / 1e4, 2), 'ha')
+            Z = Z[~drop].reset_index(drop=True)
         Z['n'] = Z.groupby('plan').cumcount() + 1
         Z['parcel_id'] = 'ZN-' + Z.plan.str.replace(r'[^A-Za-z]', '', regex=True).str[:12] + '-' + Z.n.astype(str).str.zfill(3)
         Z['mapped'] = Z.area / 1e4

@@ -1,0 +1,29 @@
+level,check,settlement,site_no,detail
+Area,polygon area differs from the Excel area by more than 20%,Abbeyfeale,3,polygons 0.37 ha vs Excel 0.26 ha
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Askeaton,2 & 3 & 4,"2, 3, 4 = 6.51 ha (Excel 6.516 ha)"
+Area,polygon area differs from the Excel area by more than 20%,Caherconlish,4,polygons 2.61 ha vs Excel 2.094 ha
+Area,polygon area differs from the Excel area by more than 20%,Castleconnell,4,polygons 8.62 ha vs Excel 6.1 ha
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Castleconnell,5,"5a, 5b = 0.58 ha (Excel 0.49 ha)"
+Area,polygon area differs from the Excel area by more than 20%,Croom,8,polygons 0.51 ha vs Excel 0.3042 ha
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Kilmallock,1,"1.1, 1.2 = 3.88 ha (Excel 3.88 ha)"
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Kilmallock,10,"10.1, 10.2, 10.3 = 4.24 ha (Excel 4.24 ha)"
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Kilmallock,9,"9.1, 9.2 = 5.33 ha (Excel 5.33 ha)"
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Newcastle West,11,11 = 30.49 ha (Excel 30.5 ha)
+Area,polygon area differs from the Excel area by more than 20%,Newcastle West,2,polygons 0.61 ha vs Excel 0.4 ha
+Info,Excel site drawn as several pieces (capacity shared by area where numbered separately),Newcastle West,5,5 = 13.73 ha (Excel 12.5 ha)
+Area,polygon area differs from the Excel area by more than 20%,Newcastle West,6,polygons 1.81 ha vs Excel 1.5 ha
+Area,polygon area differs from the Excel area by more than 20%,Rathkeale,6,polygons 0.38 ha vs Excel 0.82 ha
+New,site not in the Excel (capacity from town average density),Caherconlish,7,"5.89 ha, Enterprise and Employment"
+New,site not in the Excel (capacity from town average density),Castleconnell,10,"4.01 ha, Enterprise and Employment"
+New,site not in the Excel (capacity from town average density),Castleconnell,9,"6.74 ha, Enterprise and Employment"
+New,site not in the Excel (capacity from town average density),Kilmallock,3,"0.86 ha, nan"
+New,site not in the Excel (capacity from town average density),Kilmallock,4,"5.70 ha, nan"
+New,site not in the Excel (capacity from town average density),Kilmallock,5,"2.00 ha, nan"
+New,site not in the Excel (capacity from town average density),Kilmallock,6,"6.05 ha, nan"
+New,site not in the Excel (capacity from town average density),Kilmallock,7,"5.11 ha, nan"
+New,site not in the Excel (capacity from town average density),Newcastle West,18,"25.06 ha, nan"
+New,site not in the Excel (capacity from town average density),Newcastle West,19,"5.43 ha, nan"
+New,site not in the Excel (capacity from town average density),Rathkeale,11,"17.77 ha, Enterprise and Employment"
+New,site not in the Excel (capacity from town average density),Rathkeale,12,"14.73 ha, Enterprise and Employment"
+New,site not in the Excel (capacity from town average density),Rathkeale,13,"12.90 ha, Enterprise and Employment"
+Info,geometry,all,,"99 polygons, all valid after repair: True; CRS EPSG:2157"

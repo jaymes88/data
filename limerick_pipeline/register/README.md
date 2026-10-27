@@ -71,6 +71,12 @@ Rerun the build with each new extract (quarterly).
 
 ## County settlements audit
 
+**Council polygons (23 Oct 2026).** `inputs/county_audit_2026_sources/DevPlan_Variation_Settlement_RSCA_23_10_26.gpkg` has one layer per settlement, with the Excel figures joined, for Abbeyfeale, Askeaton, Caherconlish, Cappamore, Castleconnell, Croom, Kilmallock, Newcastle West and Rathkeale.
+- **Standardising and checking.** `county_audit/rsca26_load.py` standardises the site numbers and joins pieces drawn under one number. It shares an Excel site's capacity between its numbered parts by area (e.g. Kilmallock 1.1 and 1.2), and gives sites not in the Excel the town's average density. The checks are in `inputs/rsca26_checks.csv`.
+- **The council file wins.** For these nine towns its polygons replace the earlier matching, outlines and 2022 audit, and no interim zoned-land estimate is made there.
+- **Other towns.** Adare, Patrickswell, Bruff, Hospital, Kilfinane and Murroe, and the eight 2022-only settlements, are unchanged.
+
+
 `inputs/county_audit_2026.gpkg` (layer `sites`) is the county audit the build loads, as parcel source "Council audit – county", with IDs like `CTY-RATHKEALE-3`. It is assembled from:
 - **Council capacity audit Excel (May 2026).** 126 sites in 15 settlements, with area, density, capacity, tier, wastewater, permission and site status. The Excel has no polygons, so `county_audit/sca_match.py` matched each site to a zoning polygon by area, zoning type and the permissions it names. Matches were kept where confirmed against the council's maps: all of Kilmallock; corrected placements in Rathkeale, Caherconlish and Castleconnell; Croom except site 4; and elsewhere only the high-confidence matches. 90 sites are placed.
 - **Council-supplied polygons** (`inputs/county_audit_2026_sources/*.gpkg`, including Askeaton). All of them are included. The ones with no Excel row yet carry site numbers U1, U2 and so on, or the number from the council map (Caherconlish 7, Castleconnell 9 and 10). Where the council gives no capacity, capacity = area × the town's average density for that type of site in the council Excel (`capacity_basis` says so); the county median is used where the town has none.

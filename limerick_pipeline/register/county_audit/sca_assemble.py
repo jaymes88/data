@@ -1,3 +1,4 @@
+import os
 """Assemble the county settlements capacity audit (council Excel, May 2026) into one polygon layer for the register.
 
 Placement of each Excel site: the area match from sca_match.py, kept only where it is reliable, plus placements and
@@ -119,6 +120,25 @@ for i, r in A26.iterrows():
     A26.at[i, 'cap_basis'] = f'Area x {basis} average density for {c_} sites in the council audit ({d:g}/ha)'
     A26.at[i, 'note'] = (str(r.note) if pd.notna(r.note) else '').replace('fill in area, density and capacity', 'site number and figures to confirm').replace(
         'fill in site number, density and capacity', 'site number to confirm')
+# council settlement audit polygons (23/10/2026 file): for the towns it covers, the council's own numbered polygons replace
+# everything above (our matches, outlines and the 2022 audit). Standardised and checked by rsca26_load.py.
+RS = 'in_county/rsca26_sites.gpkg'
+if os.path.exists(RS):
+    G = gpd.read_file(RS).to_crs(ITM)
+    towns26 = set(G.settlement)
+    A26 = A26[~A26.settlement_name.isin(towns26)]
+    pick = lambda a, b: [x if isinstance(x, str) and x not in ('nan', 'None') else (y if isinstance(y, str) else None) for x, y in zip(a, b)]
+    R26 = gpd.GeoDataFrame(dict(
+        settlement_name=G.settlement, site_no=G.site_no, Zone_Orig=pick(G.xl_zoning, G.zoning_file), Area=(G.area / 1e4).round(3),
+        Densities=G.Densities, Capacity=G.Capacity, TAZ_Tier=pd.to_numeric(G.xl_tier.fillna(G.tier_file), errors='coerce'),
+        Taz_Type=G.xl_stype, wastewater=G.xl_ww, permission=G.xl_permission, site_status=pick(G.xl_status, G.status_file),
+        note=G.xl_note, placement='council polygon (settlement audit file, 23 Oct 2026)',
+        source='Council settlement audit polygons (Oct 2026)', cap_basis=G.cap_basis, geometry=G.geometry), crs=ITM)
+    A26 = pd.concat([R26, A26], ignore_index=True)
+    U_towns = towns26
+else:
+    U_towns = set()
+A26 = gpd.GeoDataFrame(A26, geometry='geometry', crs=ITM)
 A26['geometry'] = A26.geometry.make_valid().buffer(0)
 A26 = gpd.GeoDataFrame(A26, crs=ITM)
 # polygons must not overlap: a later row loses the overlap to an earlier one (Excel sites come first)
@@ -134,6 +154,7 @@ for c_ in ['Densities', 'Zone_Orig', 'Taz_Type', 'wastewater', 'permission', 'si
     A26[c_] = A26[c_].astype('string')
 A26.to_file('in_county/county_audit_2026.gpkg', layer='sites', driver='GPKG')
 U = pd.DataFrame(unplaced)
+U = U[~U.settlement.isin(U_towns)] if len(U) else U
 U.to_csv('in_county/county_audit_2026_unplaced.csv', index=False)
 gpd.GeoDataFrame(U.assign(geometry=None), geometry='geometry', crs=ITM).to_file('in_county/county_audit_2026.gpkg', layer='unplaced', driver='GPKG')
 print(A26.groupby('source').size().to_string())

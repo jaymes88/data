@@ -31,12 +31,8 @@ cols = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catch
         'servicing', 'svc_tier', 'svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water',
         'ue_water', 'ue_wastewater', 'flood_risk', 'energy', 'near_public_transport', 'near_primary_school', 'near_secondary_school',
         'school_requirements', 'council_site_status',
-        'phase', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'flag', 'notes']
+        'phase', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'flag', 'notes', 'source_name']
 R = ps[cols + ['geometry']].copy()
-# review columns, filled in by the analyst
-# review columns (To review / Accepted / Amend / Remove), carried from the register so past decisions show
-for c in ['review_status', 'review_site_no', 'review_capacity', 'review_notes', 'reviewed_by', 'reviewed_on', 'review_round']:
-    R[c] = ps[c].fillna('') if c in ps else ''
 R = gpd.GeoDataFrame(R, geometry='geometry', crs=ps.crs)
 R.to_file(OUT, layer='developable_land', driver='GPKG')
 print(len(R), 'parcels ->', OUT); print(R.parcel_source.value_counts().to_string()); print(R.parcel_status.value_counts().to_string())

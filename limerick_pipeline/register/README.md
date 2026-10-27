@@ -3,28 +3,14 @@
 One source for housing land in Limerick: the council's audit parcels (our updated version) plus parcels for residential consents outside the audit. It covers the full planning pipeline and the remaining capacity without consent, with each home counted once.
 
 
-## Start here: one file for review
+## Start here: one file
 
-`Limerick_Developable_Land_Review.gpkg` has **one layer, `developable_land`**, holding every parcel: 452 polygons covering council audit (city), council audit (county), zoned land estimates and planning consents. Each polygon carries:
-- **Land facts:** location, zoning, area.
-- **Supply:** capacity and its basis, consented and future supply, status.
-- **Permissions:** written out as text in `permission_list`.
-- **Review columns:** `review_status` (To review / Accepted / Amend / Remove), `review_site_no`, `review_capacity`, `review_notes`, `reviewed_by` and `reviewed_on`.
+`Limerick_Developable_Land_Review.gpkg` has **one layer, `developable_land`**, holding every parcel with all its fields.
+- **`local_name`:** a standard description, e.g. "Caherdavin: 43 homes, houses – private scheme" or "Kilmallock: council audit site 4, 125 homes capacity". The original CIS heading or audit name is kept in `source_name`.
+- **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/review/review_removed.gpkg`.
+- **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.
 
-Review in this file only.
-
-**Review merged so far (26 Oct 2026, non-city parcels):**
-- **Accepted:** 208 parcels.
-- **Removed:** Kilmallock zoned parcels 002 and 003 (leftover green space, homes complete), and PC-19149 (incorrect application, 19/149).
-
-The review is stored in `inputs/review/`:
-- `parcel_review.csv`: status and notes by `parcel_id`.
-- `review_shapes.gpkg`: the reviewed polygons, so a decision follows its land when a zoned-land or consent ID changes on a rebuild.
-- `review_removed.gpkg`: removed land and permissions, kept out on every rebuild.
-
-The returned file is archived as `review_returned_2026-10-26.gpkg`. To bring the edits into the register, save a copy under a new name and hand it back. Edits are merged by `parcel_id`; new polygons drawn without one are added as new parcels.
-
-Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg` with its tables and views) or source data (`inputs/`). Neither needs opening for the review. `export_review_layer.py` regenerates the review file after each build and overwrites it.
+Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg`) or source data (`inputs/`).
 
 ## Tables
 

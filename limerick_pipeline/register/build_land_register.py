@@ -17,7 +17,6 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 ITM = 2157
-REVIEW = 'in_review/parcel_review.csv'          # analyst review of each parcel (status, notes, site no., capacity), by parcel_id
 REMOVED = 'in_review/review_removed.gpkg'       # parcels the analyst removed: their land and permissions stay out of the register
 SUP = 'Limerick_Housing_Supply.gpkg'
 OUT = 'Limerick_Housing_Land_Register.gpkg'
@@ -287,43 +286,12 @@ for c in ZX:
 parcels['lea'] = where(parcels.geometry, LEA, lea_col).values
 parcels['mapped_area_ha'] = (parcels.area / 1e4).round(3)
 parcels['developable_area_ha'] = parcels.area_ha
-parcels['last_reviewed'] = AS_AT
-parcels['reviewed_by'] = ''
 parcels['density_estimate_units'] = np.nan
 parcels = parcels[['parcel_id', 'parcel_source', 'scope', 'rsca', 'neighbourhood', 'lea', 'local_name', 'landowner', 'zoning', 'site_type',
                    'density_band', 'developable_area_ha', 'mapped_area_ha', 'capacity_units', 'capacity_basis', 'density_estimate_units', 'plan_name', 'zone_gzt', 'phase',
-                   'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share', 'register_status', 'notes', 'last_reviewed',
-                   'reviewed_by', 'geometry']]
+                   'density_tier', 'density_dph', 'density_basis', 'rzlt_2027_share', 'register_status', 'notes', 'geometry']]
 parcels['geometry'] = parcels.geometry.make_valid().buffer(0)
-# analyst review: status and notes carried onto each parcel; parcels marked Remove are taken out
-RV = pd.read_csv(REVIEW, dtype=str).fillna('') if os.path.exists(REVIEW) else pd.DataFrame(columns=['parcel_id'])
-for c in ['review_status', 'review_site_no', 'review_capacity', 'review_notes', 'reviewed_by', 'reviewed_on', 'review_round']:
-    parcels[c] = parcels.parcel_id.map(RV.set_index('parcel_id')[c]) if c in RV else ''
-    parcels[c] = parcels[c].fillna('')
-parcels.loc[parcels.review_status.eq(''), 'review_status'] = 'To review'
-# IDs of zoned-land parcels (numbered in sequence) and consent parcels (named after the largest permission) can change
-# between builds, so a parcel whose ID is zoned land or not in the review takes the review of the reviewed polygon it
-# overlaps by 50%+
-REVIEW_SHAPES = 'in_review/review_shapes.gpkg'
-if os.path.exists(REVIEW_SHAPES):
-    ZR = gpd.read_file(REVIEW_SHAPES).to_crs(ITM)
-    ZR = ZR[ZR.review_status.ne('Remove')]                      # removed land and permissions are already taken out
-    loose = parcels.parcel_id.str.startswith('ZN-') | ~parcels.parcel_id.isin(RV.parcel_id)
-    for i in parcels.index[loose]:
-        g = parcels.at[i, 'geometry']
-        ov = ZR.geometry.intersection(g).area
-        hit = ov.max() >= 0.5 * g.area if len(ov) else False
-        for c in ['review_status', 'review_site_no', 'review_capacity', 'review_notes', 'reviewed_by']:
-            v = ZR.at[ov.idxmax(), c] if hit else None
-            parcels.at[i, c] = (v if isinstance(v, str) else '' if v is None or pd.isna(v) else str(v)) if hit else ('To review' if c == 'review_status' else '')
-        on = hit and parcels.at[i, 'review_status'] != 'To review'
-        parcels.at[i, 'reviewed_on'], parcels.at[i, 'review_round'] = ('2026-10-26', 'Non-city review, Oct 2026') if on else ('', '')
-gone_ids = set()                                             # removals are applied by shape and permission (REMOVED)
-parcels = parcels[~parcels.parcel_id.isin(gone_ids)].copy()
-cap_ov = pd.to_numeric(parcels.review_capacity, errors='coerce')
-parcels.loc[cap_ov.notna(), 'capacity_units'] = cap_ov[cap_ov.notna()]
-parcels.loc[cap_ov.notna(), 'capacity_basis'] = 'Analyst review capacity'
-print('review:', parcels.review_status.value_counts().to_dict(), 'removed', sorted(gone_ids))
+# analyst review (Oct 2026): every parcel accepted; the land and permissions removed at review stay out via REMOVED
 # servicing and infrastructure from the council capacity audit Excel (council_servicing.py): city sites by rsca number,
 # county sites by settlement + site number (a split part such as 1.1 or 5a takes its site's row)
 SVC = 'in_county/council_servicing.csv'
@@ -598,6 +566,55 @@ def summary(parcels, pp):
                                     t.built_units > 0, t.consented_units > 0], ['Finished', 'Partly built', 'Consented – not built'], 'No consent')
     return t
 T = summary(parcels, pp)
+
+# a granted permission means the council accepted the site as serviced: parcels with a live permission count as tier 1
+live_ids = set(pp.loc[pp.counts_toward_totals.eq('Yes') & pp.status.isin(LIVE), 'parcel_id'])
+g = parcels.parcel_id.isin(live_ids) & ~parcels.servicing.str.startswith('Serviced')
+parcels.loc[g, 'servicing'] = 'Serviced (planning permission granted)' + np.where(parcels.loc[g, 'servicing'].ne(''), '; council audit: ' + parcels.loc[g, 'servicing'], '')
+parcels.loc[parcels.parcel_id.isin(live_ids), 'svc_tier'] = '1'
+parcels.loc[parcels.servicing.eq(''), 'servicing'] = 'Not assessed'
+print('servicing after permissions rule:', parcels.servicing.str.split(r'[:(;]').str[0].str.strip().value_counts().to_dict())
+
+# standard short description: place, homes, type of scheme (the CIS heading or audit name is kept in source_name)
+DW = P.set_index('perm_id').dwelling_type.to_dict()
+SETT = P.set_index('perm_id').settlement.fillna('').to_dict()
+TEN = {'Social': 'social', 'Market (incl. Part V)': 'private', 'Affordable / cost rental': 'affordable / cost rental', 'Student (PBSA)': 'student'}
+DWW = {'Houses': 'houses', 'Apartments': 'apartments', 'Mixed': 'houses and apartments', 'Student': 'student bedspaces', 'Unknown': 'homes'}
+def describe(r):
+    c = pp[pp.parcel_id.eq(r.parcel_id) & pp.counts_toward_totals.eq('Yes')]
+    place = r.catchment
+    if r.catchment_type == 'Rest of county':
+        town = str(r.source_name).split(' – site ')[0] if r.parcel_source == 'Council audit – county' else ''
+        if not town and len(c):
+            st = SETT.get(c.sort_values('units', ascending=False).perm_id.iloc[0], '')
+            town = st if st and not any(w in st.lower() for w in ('rural', 'unknown', 'county', 'other')) else ''
+        place = f"{town} (rest of county)" if town else f"Rest of county ({str(r.lea).split(' LEA')[0].title()})"
+    live = c[c.status.isin(LIVE)]
+    cap = int(T.at[r.parcel_id, 'capacity_used']) if pd.notna(T.at[r.parcel_id, 'capacity_used']) else 0
+    if r.parcel_source.startswith('Council audit'):
+        site = r.rsca if r.parcel_source == 'Council audit' else str(r.source_name).split(' – site ')[-1]
+        site = re.sub(r'\.0$', '', str(site))
+        t = f"{place}: council audit site {site}, {cap} homes capacity"
+        if str(r.site_type).strip():
+            t += f", {str(r.site_type).strip().lower()}"
+        if len(live):
+            t += f"; {int(live.units.sum())} homes permitted"
+        return t
+    if r.parcel_source.startswith('Zoned land'):
+        return f"{place}: zoned land estimate, {cap} homes, {str(r.zoning).lower()}"
+    use = live if len(live) else c
+    n = int(use.units.sum()) if len(use) else cap
+    lead = use.sort_values('units', ascending=False).iloc[0] if len(use) else None
+    dw = DWW.get(DW.get(lead.perm_id, 'Unknown'), 'homes') if lead is not None else 'homes'
+    ten = TEN.get(lead.tenure, 'private') if lead is not None else ''
+    by = ' (council)' if lead is not None and lead.delivery_body == 'Local authority' else ' (AHB)' if lead is not None and lead.delivery_body == 'Approved housing body' else ''
+    route = ', LRD' if lead is not None and lead.route == 'LRD' else ', SHD' if lead is not None and str(lead.route).startswith('SHD') else ''
+    state = '' if len(live) else (', expired' if (c.status == 'Expired – not started').any() else ', in planning')
+    unit = 'bedspaces' if dw == 'student bedspaces' else ('home' if n == 1 else 'homes')
+    kind = '' if dw in ('homes', 'student bedspaces') else f", {dw}"
+    return f"{place}: {n} {unit}{kind} – {ten} scheme{by}{route}{state}"
+parcels['source_name'] = parcels.local_name
+parcels['local_name'] = [describe(r) for r in parcels.itertuples()]
 print(parcels.parcel_source.value_counts().to_dict())
 print('permissions', len(pp), 'units', pp.units.sum(), 'consented', T.consented_units.sum(), 'unconsented', T.unconsented_capacity.sum(),
       'total', T.total_supply_units.sum(), 'future', T.future_supply_units.sum())
@@ -644,7 +661,6 @@ DICT = [
     ('parcels', 'geod_addresses_now / geod_new_since_2019 / geod_extract', 'GeoDirectory residential addresses inside the parcel now / created since 2019, and the extract date. A rise on a parcel with no permission means building without a linked consent.'),
     ('parcels', 'catchment / catchment_type / catchment_share / catchment_basis', 'Study catchment the parcel overlaps most and the share inside it. Parcels outside every catchment go to a key town or large village when zoned in its local area plan, within 500 m of it, or named in the scheme and within 2 km (catchment_share 0, catchment_basis says which). Otherwise Rest of county.'),
     ('parcels', 'notes', 'Why a parcel was reinstated, matched approximately, or needs checking.'),
-    ('parcels', 'last_reviewed / reviewed_by', 'Update on each review.'),
     ('parcel_permissions', 'perm_id', 'Unique permission key (CIS project id or REG-<ref>). One row per permission.'),
     ('parcel_permissions', 'parcel_id', 'The one parcel this permission sits on. Must exist in parcels.'),
     ('parcel_permissions', 'units', 'Homes in this permission as counted (after amendments and repeats are removed). PBSA: units as recorded, bedspaces separate.'),

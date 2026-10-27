@@ -1,4 +1,4 @@
-"""One polygon file for reviewing the land register parcel by parcel.
+"""One polygon file holding every parcel of the land register.
 
 Writes Limerick_Developable_Land_Review.gpkg with a single layer, developable_land: every parcel in the register with
 its land facts, capacity, consented and future supply, and its permissions written out as text, followed by blank review
@@ -28,9 +28,7 @@ cols = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catch
         'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'capacity_manual', 'density_estimate_units',
         'consented_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units', 'parcel_status',
         'permissions', 'permission_list', 'est_q4_2026', 'est_2027', 'est_2028', 'est_2029', 'est_2030', 'est_2031_plus',
-        'servicing', 'svc_tier', 'svc_lighting', 'svc_footpaths', 'svc_road_access', 'svc_water', 'svc_foul', 'svc_surface_water',
-        'ue_water', 'ue_wastewater', 'flood_risk', 'energy', 'near_public_transport', 'near_primary_school', 'near_secondary_school',
-        'school_requirements', 'council_site_status',
+        'energy', 'ue_water', 'ue_wastewater',
         'phase', 'rzlt_2027_share', 'geod_addresses_now', 'geod_new_since_2019', 'flag', 'notes', 'source_name']
 R = ps[cols + ['geometry']].copy()
 R = gpd.GeoDataFrame(R, geometry='geometry', crs=ps.crs)

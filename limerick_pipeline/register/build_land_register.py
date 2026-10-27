@@ -71,6 +71,19 @@ A['parcel_source'] = 'Council audit'          # the 3 sites we reinstated are co
 A['scope'] = A.scope.fillna('City')
 A['capacity_basis'] = 'Council estimate (area × density band)'
 A['notes'] = A.reconcile_action.fillna('')
+# manual land additions (in_review/manual_geometry.gpkg): extra land drawn by the analyst, joined to an existing audit parcel
+MANUAL_GEOM = 'in_review/manual_geometry.gpkg'
+if os.path.exists(MANUAL_GEOM):
+    for _, m in gpd.read_file(MANUAL_GEOM).to_crs(ITM).iterrows():
+        k = A.index[A.site_id.eq(m.parcel_id)]
+        if not len(k):
+            print('manual geometry: parcel not found', m.parcel_id); continue
+        others = unary_union(list(A.drop(index=k).geometry))
+        add = m.geometry.difference(others)                    # never take land from another audit parcel
+        A.at[k[0], 'geometry'] = A.at[k[0], 'geometry'].union(add)
+        A.at[k[0], 'area_ha'] = round((A.at[k[0], 'area_ha'] or 0) + add.area / 1e4, 3)
+        A.at[k[0], 'notes'] = (str(A.at[k[0], 'notes'] or '') + f'; {add.area / 1e4:.2f} ha added by hand on {m.set_on}: {m.reason}').strip('; ')
+        print('manual geometry:', m.parcel_id, f'+{add.area / 1e4:.2f} ha')
 
 # council county settlements audit: sites in the smaller Development Plan settlements. Gross area and a density
 # (homes/ha) per site; capacity = area x density. Where a range is given (e.g. 10-22) the midpoint is used.
@@ -583,13 +596,13 @@ def summary(parcels, pp):
     return t
 T = summary(parcels, pp)
 
-# a granted permission means the council accepted the site as serviced: parcels with a live permission count as tier 1
+# servicing kept to three council audit fields: energy, Uisce Eireann water and wastewater. A granted permission means the
+# council accepted water and wastewater capacity, so parcels with a live permission and no council entry read 'Y (permission granted)'
 live_ids = set(pp.loc[pp.counts_toward_totals.eq('Yes') & pp.status.isin(LIVE), 'parcel_id'])
-g = parcels.parcel_id.isin(live_ids) & ~parcels.servicing.str.startswith('Serviced')
-parcels.loc[g, 'servicing'] = 'Serviced (planning permission granted)' + np.where(parcels.loc[g, 'servicing'].ne(''), '; council audit: ' + parcels.loc[g, 'servicing'], '')
-parcels.loc[parcels.parcel_id.isin(live_ids), 'svc_tier'] = '1'
-parcels.loc[parcels.servicing.eq(''), 'servicing'] = 'Not assessed'
-print('servicing after permissions rule:', parcels.servicing.str.split(r'[:(;]').str[0].str.strip().value_counts().to_dict())
+for c in ['ue_water', 'ue_wastewater']:
+    parcels.loc[parcels.parcel_id.isin(live_ids) & parcels[c].fillna('').eq(''), c] = 'Y (permission granted)'
+parcels = parcels.drop(columns=[c for c in SVC_COLS if c not in ('energy', 'ue_water', 'ue_wastewater')])
+print('water:', parcels.ue_water.replace('', 'blank').value_counts().to_dict())
 
 # standard short description: place, homes, type of scheme (the CIS heading or audit name is kept in source_name)
 DW = P.set_index('perm_id').dwelling_type.to_dict()
@@ -691,10 +704,7 @@ DICT = [
     ('parcel_permissions', 'mix_source / mix_studio … mix_5plus', 'Bedroom mix of the permission and where it comes from (CIS, register description, or planning file documents such as planner\u2019s reports and schedules of accommodation). Blank where not known.'),
     ('parcel_summary', 'mix_* / units_with_known_mix', 'Bedroom mix summed over the parcel\u2019s counted permissions, and the units it covers (the rest have no known mix).'),
     ('parcel_permissions', 'geod_new_vacant', 'Of the built addresses credited to the permission, how many GeoDirectory marks vacant.'),
-    ('parcels', 'servicing', 'Council servicing assessment summarised: Serviced (lighting, footpaths, road access, water, foul and surface water all Y), Serviceable: <items> (S = serviceable), or Not assessed. From the council capacity audit Excel, May 2026.'),
-    ('parcels', 'svc_tier / svc_lighting … svc_surface_water', 'Council audit servicing: updated tier (1 serviced, 2 serviceable) and Y / S for each service.'),
-    ('parcels', 'ue_water / ue_wastewater', 'Uisce Éireann capacity as recorded in the council audit (Y / colour status).'),
-    ('parcels', 'flood_risk / energy / near_* / school_requirements / council_site_status', 'Other council audit fields: flood risk, energy infrastructure, distance to public transport and schools, school requirements, and the council site status (June/July 2026).'),
+    ('parcels', 'energy / ue_water / ue_wastewater', 'From the council capacity audit (May 2026): energy infrastructure, and Uisce Éireann water and wastewater capacity. Water and wastewater read "Y (permission granted)" where a live permission exists and the audit has no entry.'),
     ('parcels', 'capacity_manual', 'Yes where the capacity was set by hand (inputs/manual_capacity.csv); capacity_basis and notes give the reason and date.'),
     ('parcels', 'density_estimate_units', 'Indicative homes for the parcel from its area x the local median density of permitted Limerick schemes (density_tier, density_dph). Filled for every parcel so all land can be compared on one basis. Not used in the supply totals; on consent parcels the consented units are the figure that counts.'),
     ('parcel_summary', 'capacity_used', 'The unit figure the parcel is planned on: council or zoning capacity where there is one, otherwise the consented units. Always filled where the parcel has units.'),

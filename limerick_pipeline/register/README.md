@@ -10,6 +10,7 @@ One source for housing land in Limerick: the council's audit parcels (our update
 - **Review (October 2026):** every parcel was reviewed and accepted, so the review columns are gone. The land and permissions removed at review (Kilmallock zoned land 002 and 003, and permission 19/149) stay out on every rebuild through `inputs/removed_parcels.gpkg` (copied to `in_review/` for the build).
 - **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.
 
+- **Manual land additions:** `inputs/manual_geometry.gpkg` holds land drawn by hand and joined to an existing audit parcel. The first is 4.15 ha added to CITY-107 (27 Oct 2026), within its 2,500-home capacity.
 - **Manual capacities:** `inputs/manual_capacity.csv` (copied to `in_review/` for the build) holds capacities set by hand, each with a reason, who set it and when. On those parcels `capacity_manual` = Yes, `capacity_basis` starts "MANUAL OVERRIDE", and the note records the old and new figures. The first is CITY-107, the masterplanned city-centre mixed-use site of about 60 ha, set to 2,500 homes on 27 Oct 2026.
 
 Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg`) or source data (`inputs/`).
@@ -59,10 +60,7 @@ Rerun the build with each new extract (quarterly).
 
 ## Servicing (council capacity audit)
 
-`county_audit/council_servicing.py` reads the servicing and infrastructure columns from the council Excel (May 2026) into `inputs/council_servicing.csv`. These are lighting, footpaths, road access, water, foul and surface water (Y = serviced, S = serviceable), the updated tier, Uisce Éireann water and wastewater capacity, flood risk, energy infrastructure, distance to public transport and schools, school requirements, and site status.
-- **City sites** join on `SCA Site No.`, which is our `rsca` number. Where the council writes a combined reference such as '72/ Z16', the first number is used, provided our site is no more than 30% larger than the council's area.
-- **County sites** join on settlement and site number. A split part (1.1, 5a) takes its site's row.
-- **`servicing` field:** a one-line summary of each parcel, either Serviced, Serviceable: <items>, or Not assessed.
+Only three servicing fields are kept, all from the council capacity audit Excel (May 2026): `energy`, `ue_water` and `ue_wastewater` (Uisce Éireann capacity). Where a parcel has a live planning permission and the audit has no entry, water and wastewater read "Y (permission granted)". `county_audit/council_servicing.py` still reads the full set of columns into `inputs/council_servicing.csv` if they're needed again.
 
 ## County settlements audit
 

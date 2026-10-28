@@ -213,8 +213,20 @@ if os.path.exists(CN + 'flooda.gpkg'):
     # judgement thresholds for the pick-list fields
     fab = O.flood_zone_a_share + O.flood_zone_b_share.fillna(0)
     O['constraint_flood_zone'] = np.select([(O.flood_zone_a_share >= 0.25) | (fab >= 0.5), fab > 0.01], ['Yes – significant', 'Yes – minor'], 'No')
+    # heritage share: the part of the site in an ACA or within RPS_SETTING m of a protected structure (the RPS points mark the
+    # building, not its curtilage), so one structure on a large site affects only the land around it
+    RPS_SETTING = 30
+    rb = R.buffer(RPS_SETTING); rix = rb.sindex; aix = A.sindex
+    hs, rs = [], []
+    for g, a in zip(site.geometry, site.a):
+        rp = [shapely.intersection(rb.iloc[q], g, grid_size=0.01) for q in rix.query(g, predicate='intersects')]
+        ap = [shapely.intersection(A.geometry.iloc[q], g, grid_size=0.01) for q in aix.query(g, predicate='intersects')]
+        ru = shapely.union_all(rp, grid_size=0.01) if rp else shapely.Polygon()
+        hu = shapely.union_all(rp + ap, grid_size=0.01) if rp or ap else shapely.Polygon()
+        rs.append(round(min(1, ru.area / a), 3) if a else 0); hs.append(round(min(1, hu.area / a), 3) if a else 0)
+    O['rps_setting_share'], O['heritage_share'] = rs, hs
     O['constraint_protected_structure_or_aca'] = np.select(
-        [(O.rps_on_site_count > 0) | (O.aca_share >= 0.5), O.rps_within_50m.ne('') | (O.aca_share > 0.01)], ['Yes – significant', 'Yes – minor'], 'No')
+        [O.heritage_share >= 0.25, O.rps_within_50m.ne('') | (O.heritage_share > 0.01)], ['Yes – significant', 'Yes – minor'], 'No')
     O['derelict_or_vacant_sites_register'] = np.where(O.derelict_sites_register.ne(''), 'Yes', 'No')
 
 # ---------------------------------------------------------------- indicative capacity (auto)
@@ -267,7 +279,7 @@ cols = ['opp_id', 'source_id', 'site_category', 'settlement', 'catchment', 'catc
         'current_use', 'site_type', 'geod_addresses', 'geod_vacant', 'geod_derelict', 'overlaps_land_register', 'land_register_share',
         'zoning', 'zoning_detail', 'residential_permitted_in_zone', 'residential_zoned_share', 'rzlt_share',
         'planning_applications', 'latest_application', 'derelict_or_vacant_sites_register'] + \
-       ['derelict_sites_register', 'flood_zone_a_share', 'flood_zone_b_share', 'rps_on_site', 'rps_on_site_count', 'rps_within_50m', 'aca_name', 'aca_share'] + \
+       ['derelict_sites_register', 'flood_zone_a_share', 'flood_zone_b_share', 'rps_on_site', 'rps_on_site_count', 'rps_within_50m', 'rps_setting_share', 'aca_name', 'aca_share', 'heritage_share'] + \
        ['constraint_' + c for c in ['flood_zone', 'protected_structure_or_aca', 'archaeology', 'ecology', 'access', 'contamination']] + \
        ['density_assumed', 'density_basis', 'developable_share', 'indicative_homes', 'indicative_homes_not_in_register', 'capacity_confidence',
         'ownership_status', 'ownership_type', 'folio_ref', 'energy', 'ue_water', 'ue_wastewater', 'likely_route', 'timeframe', 'barriers',

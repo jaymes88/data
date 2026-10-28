@@ -1,10 +1,9 @@
 """One file holding the land register: layer developable_land (every parcel, all fields) and layer permissions
 (every permission, linked by parcel_id).
 
-Writes Limerick_Developable_Land_Review.gpkg with a single layer, developable_land: every parcel in the register with
-its land facts, capacity, consented and future supply, and its permissions written out as text, followed by blank review
-columns. Built from Limerick_Housing_Land_Register.gpkg; rerunning it overwrites the file, so reviewed copies should be
-saved under another name and returned for merging (matched on parcel_id).
+Built from Limerick_Housing_Land_Register.gpkg. Developer names per permission come from in_review/developer_names.csv
+(developer_names.py); the parcel's developer field lists the developers of its counted permissions. landowner is the
+council audit value, left for the council to complete.
 """
 import sqlite3
 import pandas as pd, geopandas as gpd
@@ -13,7 +12,11 @@ REG = 'Limerick_Housing_Land_Register.gpkg'
 OUT = 'Limerick_Developable_Land.gpkg'
 
 ps = gpd.read_file(REG, layer='parcel_summary')
+DEV = pd.read_csv('in_review/developer_names.csv', dtype=str).fillna('').set_index('perm_id')
 pp = pd.read_sql("select * from parcel_permissions where counts_toward_totals = 'Yes'", sqlite3.connect(REG))
+pp['developer'] = pp.perm_id.astype(str).map(DEV.developer).fillna('')
+dev = (pp[pp.developer.ne('')].sort_values('units', ascending=False).groupby('parcel_id').developer
+       .apply(lambda x: '; '.join(dict.fromkeys(x))))
 pp['txt'] = (pp.planning_ref.fillna(pp.register_ref).fillna('CIS ' + pp.perm_id.astype(str)) + ': ' + pp.units.fillna(0).astype(int).astype(str)
              + ' homes, ' + pp.status + pp.units_built.fillna(0).gt(0).map({True: '', False: ''})
              + pp.apply(lambda r: f' ({int(r.units_built)} built)' if pd.notna(r.units_built) and 0 < r.units_built < r.units else '', axis=1))
@@ -24,8 +27,10 @@ ps['src_order'] = ps.parcel_source.map(order)
 ps = ps.sort_values(['src_order', 'catchment_type', 'catchment', 'parcel_id'])
 ps['permission_list'] = ps.parcel_id.map(perm_txt).fillna('')
 ps['settlement_or_area'] = ps.catchment
+ps['developer'] = ps.parcel_id.map(dev).fillna('')
+ps['landowner'] = ps.landowner.fillna('').replace({'Unknown': ''})
 
-lead = ['parcel_id', 'parcel_source', 'local_name', 'settlement_or_area', 'catchment_type', 'lea', 'zoning', 'site_type',
+lead = ['parcel_id', 'parcel_source', 'local_name', 'developer', 'landowner', 'settlement_or_area', 'catchment_type', 'lea', 'zoning', 'site_type',
         'register_status', 'mapped_area_ha', 'developable_area_ha', 'capacity_used', 'capacity_basis', 'capacity_manual', 'density_estimate_units',
         'consented_units', 'unconsented_capacity', 'total_supply_units', 'built_units', 'future_supply_units', 'parcel_status',
         'permissions', 'permission_list', 'complete_units', 'under_construction_units', 'permitted_not_started_units', 'stalled_units',
@@ -40,6 +45,9 @@ R.to_file(OUT, layer='developable_land', driver='GPKG')
 # second layer: every counted permission (one row each), linked to the polygons by parcel_id
 PP = pd.read_sql("select * from parcel_permissions", sqlite3.connect(REG)).drop(columns=['fid'], errors='ignore')
 first = ['parcel_id', 'perm_id', 'planning_ref', 'register_ref', 'scheme', 'units', 'units_built', 'status', 'counts_toward_totals', 'relationship']
+PP['developer'] = PP.perm_id.astype(str).map(DEV.developer).fillna('')
+PP['developer_source'] = PP.perm_id.astype(str).map(DEV.developer_source).fillna('')
+first = first[:6] + ['developer', 'developer_source'] + first[6:]
 PP = PP[first + [c for c in PP.columns if c not in first]].sort_values(['parcel_id', 'units'], ascending=[True, False])
 import pyogrio
 pyogrio.write_dataframe(PP, OUT, layer='permissions', driver='GPKG')

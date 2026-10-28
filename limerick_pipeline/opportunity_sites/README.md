@@ -20,7 +20,7 @@ Sites spotted on a desk review that look underused or worth investigating, for t
 - **Wastewater:** a settlement-level Uisce Éireann status, where the council's HDAP submission names the settlement as Red or Amber.
 
 ## Fields to fill in as sites are investigated
-- **What's there:** current use and site type.
+- **What's there:** current use and site type. Town and village sites start as Infill (the focus of the review); confirm or change it.
 - **Constraints:** flood, protected structure or ACA, archaeology, ecology, access, contamination.
 - **Ownership:** status, type and folio reference. Owner names are not recorded.
 - **Delivery:** energy and water, likely route and timeframe, barriers.

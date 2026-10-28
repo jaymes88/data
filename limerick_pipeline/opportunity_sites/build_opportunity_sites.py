@@ -54,7 +54,10 @@ O['identified_on'] = '2026-10'
 
 # ---------------------------------------------------------------- what is there now (auto where possible)
 O['current_use'] = 'Not yet recorded'
+# the review targets infill: town and village opportunity sites start as Infill (to confirm); city sites are left to record,
+# since they may be infill or brownfield
 O['site_type'] = 'Not yet recorded'
+O.loc[O.catchment_type.isin(['Key town', 'Large village']), 'site_type'] = 'Infill'
 G = gpd.read_file('in_geodir/limerick_geod_residential_points.gpkg', columns=['vacant', 'derelict']).to_crs(ITM)
 gj = gpd.sjoin(G, O[['opp_id', 'geometry']], predicate='within')
 O['geod_addresses'] = O.opp_id.map(gj.groupby('opp_id').size()).fillna(0).astype(int)

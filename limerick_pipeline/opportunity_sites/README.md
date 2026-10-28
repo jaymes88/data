@@ -17,11 +17,18 @@ Sites spotted on a desk review that look underused or worth investigating, for t
 - **Zoning:** the main zone and the full split, whether housing is allowed (Yes / Mixed use / No / Partly), and the share on the RZLT map.
 - **Planning history:** the number of applications on the site and the latest one, from the national planning register.
 - **Capacity:** the Council density for the catchment (Variation No. 3, as in the needs model) × developable share (0.91, editable) × area gives indicative homes. A second figure excludes any part already in the land register. Confidence starts at Low.
+- **Constraints (from the council layers in `inputs/constraints/`):**
+  - `flood_zone_a_share`: share of the site in Flood Zone A. Only Zone A was supplied, so Zone B is not checked.
+  - `rps_on_site` and `rps_within_50m`: protected structure numbers on the site and within 50 m (setting). County structures are the October 2026 RPS layer; city structures are from the 2010 City Development Plan layer.
+  - `aca_name` and `aca_share`: the ACA the site falls in and the share inside. These come from the 2010 city and county development plan layers.
+  - `derelict_sites_register`: Derelict Sites Register entries on the site or within 25 m (the entries are points at the address).
+  - The pick-list fields are set from these. Flood: significant if 25% or more of the site is in Zone A, minor if any part is (above 1%). Protected structure or ACA: significant if a protected structure is on the site or half the site is in an ACA; minor if one is within 50 m or any part is in an ACA. Derelict or vacant register: Yes if a derelict site entry is on or next to the site. These thresholds are a judgement; change any site by hand and the entry is kept on rebuild ("Not checked" is not kept).
+  - The vacant points supplied are the GeoDirectory vacant residential addresses, which already give `geod_vacant`.
 - **Wastewater:** a settlement-level Uisce Éireann status, where the council's HDAP submission names the settlement as Red or Amber.
 
 ## Fields to fill in as sites are investigated
 - **What's there:** current use and site type. Town and village sites start as Infill (the focus of the review); confirm or change it.
-- **Constraints:** flood, protected structure or ACA, archaeology, ecology, access, contamination.
+- **Constraints:** archaeology, ecology, access and contamination. Flood, protected structure or ACA are filled automatically but can be overridden.
 - **Ownership:** status, type and folio reference. Owner names are not recorded.
 - **Delivery:** energy and water, likely route and timeframe, barriers.
 - **Tracking:** status, priority, next action, last updated, updated by, notes.

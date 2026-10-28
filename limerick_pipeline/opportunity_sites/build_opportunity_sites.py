@@ -160,6 +160,49 @@ O['derelict_or_vacant_sites_register'] = 'Not checked'
 for c in ['flood_zone', 'protected_structure_or_aca', 'archaeology', 'ecology', 'access', 'contamination']:
     O['constraint_' + c] = 'Not checked'
 
+# ---------------------------------------------------------------- constraints from the council layers (auto), in_constraints/
+# Flood Zone A (no Zone B supplied), Record of Protected Structures (county Oct 2026 layer + 2010 City Development Plan),
+# ACAs (2010 city and county development plans), Derelict Sites Register (Oct 2026), GeoDirectory vacant residential points.
+CN = 'in_constraints/'
+if os.path.exists(CN + 'flooda.gpkg'):
+    site = O[['opp_id', 'geometry']].copy(); site['a'] = site.area
+    def share(layer):
+        L_ = gpd.read_file(CN + layer).to_crs(ITM); L_['geometry'] = L_.geometry.make_valid()
+        x = gpd.overlay(site, L_[['geometry']], how='intersection', keep_geom_type=True)
+        x['s'] = x.area
+        return O.opp_id.map(x.groupby('opp_id').s.sum() / site.set_index('opp_id').a).fillna(0).clip(0, 1).round(3)
+    O['flood_zone_a_share'] = share('flooda.gpkg')
+    # protected structures: on the site, or within 50 m (setting)
+    R = gpd.read_file(CN + 'rps.gpkg').to_crs(ITM)
+    R['ref'] = np.where(R.reg_no.notna(), 'RPS ' + R.reg_no.astype('Int64').astype(str), R.rps_cpd_10.fillna('').str.replace('RSP', 'RPS'))
+    R = R[R.ref.str.strip().ne('') & R.geometry.x.between(450000, 620000)]
+    def refs(pts, dist):
+        j = gpd.sjoin(pts[['ref', 'geometry']], site[['opp_id', 'geometry']].assign(geometry=site.buffer(dist)) if dist else site[['opp_id', 'geometry']],
+                      predicate='within')
+        return j.groupby('opp_id').ref.apply(lambda v: '; '.join(sorted(set(v), key=lambda t: (len(t), t))))
+    on, near = refs(R, 0), refs(R, 50)
+    O['rps_on_site'] = O.opp_id.map(on).fillna('')
+    O['rps_within_50m'] = O.opp_id.map(near).fillna('')
+    O['rps_on_site_count'] = O.rps_on_site.apply(lambda t: len(t.split('; ')) if t else 0)
+    # ACAs
+    A = gpd.read_file(CN + 'aca.gpkg').to_crs(ITM); A['geometry'] = A.geometry.make_valid()
+    A['label'] = A.name.where(A.name.notna(), 'City ACA ' + A.pgid.astype(str) + ' (2010 City Development Plan)')
+    x = gpd.overlay(site, A[['label', 'geometry']], how='intersection', keep_geom_type=True); x['s'] = x.area
+    O['aca_share'] = O.opp_id.map(x.groupby('opp_id').s.sum() / site.set_index('opp_id').a).fillna(0).clip(0, 1).round(3)
+    O['aca_name'] = O.opp_id.map(x.sort_values('s', ascending=False).groupby('opp_id').label.apply(lambda v: '; '.join(dict.fromkeys(v)))).fillna('')
+    # Derelict Sites Register: entry point on the site or within 25 m (points are geocoded to the address)
+    DS = gpd.read_file(CN + 'derelict_sites.gpkg').to_crs(ITM).rename(columns={'SITE ID': 'ref'})
+    O['derelict_sites_register'] = O.opp_id.map(refs(DS, 25)).fillna('')
+    # ACA parts named only by letter ("B: 19th & Early 20th Century Core") get the settlement in front
+    part = O.aca_name.ne('') & ~O.aca_name.str.contains('ACA')
+    O.loc[part, 'aca_name'] = O.settlement[part] + ' ACA, ' + O.aca_name[part]
+    # vacants.gpkg (GeoDirectory vacant residential points) gives the same counts as geod_vacant, so it is not added again
+    # judgement thresholds for the pick-list fields
+    O['constraint_flood_zone'] = np.select([O.flood_zone_a_share >= 0.25, O.flood_zone_a_share > 0.01], ['Yes – significant', 'Yes – minor'], 'No')
+    O['constraint_protected_structure_or_aca'] = np.select(
+        [(O.rps_on_site_count > 0) | (O.aca_share >= 0.5), O.rps_within_50m.ne('') | (O.aca_share > 0.01)], ['Yes – significant', 'Yes – minor'], 'No')
+    O['derelict_or_vacant_sites_register'] = np.where(O.derelict_sites_register.ne(''), 'Yes', 'No')
+
 # ---------------------------------------------------------------- indicative capacity (auto)
 D = openpyxl.load_workbook('Limerick-HDS-2040-needs-model.xlsx', data_only=True)['Land at Council density']
 dens = {D.cell(r, 1).value: (D.cell(r, 3).value, D.cell(r, 4).value) for r in range(7, 31)}
@@ -210,6 +253,7 @@ cols = ['opp_id', 'source_id', 'site_category', 'settlement', 'catchment', 'catc
         'current_use', 'site_type', 'geod_addresses', 'geod_vacant', 'geod_derelict', 'overlaps_land_register', 'land_register_share',
         'zoning', 'zoning_detail', 'residential_permitted_in_zone', 'residential_zoned_share', 'rzlt_share',
         'planning_applications', 'latest_application', 'derelict_or_vacant_sites_register'] + \
+       ['derelict_sites_register', 'flood_zone_a_share', 'rps_on_site', 'rps_on_site_count', 'rps_within_50m', 'aca_name', 'aca_share'] + \
        ['constraint_' + c for c in ['flood_zone', 'protected_structure_or_aca', 'archaeology', 'ecology', 'access', 'contamination']] + \
        ['density_assumed', 'density_basis', 'developable_share', 'indicative_homes', 'indicative_homes_not_in_register', 'capacity_confidence',
         'ownership_status', 'ownership_type', 'folio_ref', 'energy', 'ue_water', 'ue_wastewater', 'likely_route', 'timeframe', 'barriers',
@@ -224,7 +268,7 @@ if MASTER:
     for c in MANUAL:
         if c in M:
             v = M[c]
-            ok = v.notna() & ~v.astype(str).str.strip().isin(['', 'nan', 'None'])
+            ok = v.notna() & ~v.astype(str).str.strip().isin(['', 'nan', 'None', 'Not checked'])
             O.loc[ok, c] = v[ok]
     O.loc[M._new, 'identified_on'] = TODAY[:7]
     O['developable_share'] = pd.to_numeric(O.developable_share, errors='coerce').fillna(NET)

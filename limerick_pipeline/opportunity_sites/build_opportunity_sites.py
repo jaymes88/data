@@ -161,17 +161,30 @@ for c in ['flood_zone', 'protected_structure_or_aca', 'archaeology', 'ecology', 
     O['constraint_' + c] = 'Not checked'
 
 # ---------------------------------------------------------------- constraints from the council layers (auto), in_constraints/
-# Flood Zone A (no Zone B supplied), Record of Protected Structures (county Oct 2026 layer + 2010 City Development Plan),
+# Flood Zones A and B, Record of Protected Structures (county Oct 2026 layer + 2010 City Development Plan),
 # ACAs (2010 city and county development plans), Derelict Sites Register (Oct 2026), GeoDirectory vacant residential points.
 CN = 'in_constraints/'
 if os.path.exists(CN + 'flooda.gpkg'):
     site = O[['opp_id', 'geometry']].copy(); site['a'] = site.area
-    def share(layer):
-        L_ = gpd.read_file(CN + layer).to_crs(ITM); L_['geometry'] = L_.geometry.make_valid()
-        x = gpd.overlay(site, L_[['geometry']], how='intersection', keep_geom_type=True)
-        x['s'] = x.area
-        return O.opp_id.map(x.groupby('opp_id').s.sum() / site.set_index('opp_id').a).fillna(0).clip(0, 1).round(3)
-    O['flood_zone_a_share'] = share('flooda.gpkg')
+    SITEBOX = site.geometry.buffer(20).union_all()
+    # flood: per site, Zone A part and the part of Zone B outside Zone A (snap-rounded overlay copes with invalid flood polygons)
+    import shapely
+    def parts(layer):
+        L_ = gpd.read_file(CN + layer, bbox=tuple(site.total_bounds)).to_crs(ITM).geometry
+        L_ = L_[L_.intersects(SITEBOX)].reset_index(drop=True); ix = L_.sindex
+        out = []
+        for g in site.geometry:
+            k = ix.query(g, predicate='intersects')
+            bits = [p for q in k for p in shapely.get_parts(shapely.intersection(L_[q], g, grid_size=0.01)) if p.geom_type == 'Polygon']
+            out.append(shapely.union_all(bits, grid_size=0.01) if bits else shapely.Polygon())
+        return out
+    pa = parts('flooda.gpkg')
+    O['flood_zone_a_share'] = [round(min(1, p.area / a), 3) if a else 0 for p, a in zip(pa, site.a)]
+    if os.path.exists(CN + 'floodb.gpkg'):
+        pb = parts('floodb.gpkg')
+        O['flood_zone_b_share'] = [round(min(1, shapely.difference(b, p, grid_size=0.01).area / a), 3) if a else 0 for b, p, a in zip(pb, pa, site.a)]
+    else:
+        O['flood_zone_b_share'] = np.nan
     # protected structures: on the site, or within 50 m (setting)
     R = gpd.read_file(CN + 'rps.gpkg').to_crs(ITM)
     R['ref'] = np.where(R.reg_no.notna(), 'RPS ' + R.reg_no.astype('Int64').astype(str), R.rps_cpd_10.fillna('').str.replace('RSP', 'RPS'))
@@ -198,7 +211,8 @@ if os.path.exists(CN + 'flooda.gpkg'):
     O.loc[part, 'aca_name'] = O.settlement[part] + ' ACA, ' + O.aca_name[part]
     # vacants.gpkg (GeoDirectory vacant residential points) gives the same counts as geod_vacant, so it is not added again
     # judgement thresholds for the pick-list fields
-    O['constraint_flood_zone'] = np.select([O.flood_zone_a_share >= 0.25, O.flood_zone_a_share > 0.01], ['Yes – significant', 'Yes – minor'], 'No')
+    fab = O.flood_zone_a_share + O.flood_zone_b_share.fillna(0)
+    O['constraint_flood_zone'] = np.select([(O.flood_zone_a_share >= 0.25) | (fab >= 0.5), fab > 0.01], ['Yes – significant', 'Yes – minor'], 'No')
     O['constraint_protected_structure_or_aca'] = np.select(
         [(O.rps_on_site_count > 0) | (O.aca_share >= 0.5), O.rps_within_50m.ne('') | (O.aca_share > 0.01)], ['Yes – significant', 'Yes – minor'], 'No')
     O['derelict_or_vacant_sites_register'] = np.where(O.derelict_sites_register.ne(''), 'Yes', 'No')
@@ -253,7 +267,7 @@ cols = ['opp_id', 'source_id', 'site_category', 'settlement', 'catchment', 'catc
         'current_use', 'site_type', 'geod_addresses', 'geod_vacant', 'geod_derelict', 'overlaps_land_register', 'land_register_share',
         'zoning', 'zoning_detail', 'residential_permitted_in_zone', 'residential_zoned_share', 'rzlt_share',
         'planning_applications', 'latest_application', 'derelict_or_vacant_sites_register'] + \
-       ['derelict_sites_register', 'flood_zone_a_share', 'rps_on_site', 'rps_on_site_count', 'rps_within_50m', 'aca_name', 'aca_share'] + \
+       ['derelict_sites_register', 'flood_zone_a_share', 'flood_zone_b_share', 'rps_on_site', 'rps_on_site_count', 'rps_within_50m', 'aca_name', 'aca_share'] + \
        ['constraint_' + c for c in ['flood_zone', 'protected_structure_or_aca', 'archaeology', 'ecology', 'access', 'contamination']] + \
        ['density_assumed', 'density_basis', 'developable_share', 'indicative_homes', 'indicative_homes_not_in_register', 'capacity_confidence',
         'ownership_status', 'ownership_type', 'folio_ref', 'energy', 'ue_water', 'ue_wastewater', 'likely_route', 'timeframe', 'barriers',

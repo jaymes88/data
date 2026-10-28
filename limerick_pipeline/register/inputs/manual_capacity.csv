@@ -1,2 +1,2 @@
-parcel_id,capacity_units,reason,set_by,set_on
-CITY-107,2500,"Masterplanned city-centre mixed-use site (about 60 ha); no application yet; earmarked for 2,500 homes",Analyst,2026-10-27
+parcel_id,capacity_units,reason,set_by,set_on,catchment_split
+CITY-107,2500,"Masterplanned city-centre mixed-use site (about 60 ha); no application yet; earmarked for 2,500 homes. Half the site and half the homes lie in Singland/Garryowen: split 50/50 with City Centre in the needs model",Analyst,2026-10-27,City Centre:0.5;Singland/Garryowen:0.5

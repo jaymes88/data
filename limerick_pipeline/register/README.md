@@ -13,7 +13,7 @@ One source for housing land in Limerick: the council's audit parcels (our update
 - **Servicing:** a parcel with a live planning permission counts as serviced (tier 1), because the council would not have granted it otherwise.
 
 - **Manual land additions:** `inputs/manual_geometry.gpkg` holds land drawn by hand and joined to an existing audit parcel. The first is 4.15 ha added to CITY-107 (27 Oct 2026), within its 2,500-home capacity.
-- **Manual capacities:** `inputs/manual_capacity.csv` (copied to `in_review/` for the build) holds capacities set by hand, each with a reason, who set it and when. On those parcels `capacity_manual` = Yes, `capacity_basis` starts "MANUAL OVERRIDE", and the note records the old and new figures. The first is CITY-107, the masterplanned city-centre mixed-use site of about 60 ha, set to 2,500 homes on 27 Oct 2026.
+- **Manual capacities:** `inputs/manual_capacity.csv` (copied to `in_review/` for the build) holds capacities set by hand, each with a reason, who set it and when. On those parcels `capacity_manual` = Yes, `capacity_basis` starts "MANUAL OVERRIDE", and the note records the old and new figures. The first is CITY-107, the masterplanned city-centre mixed-use site of about 60 ha, set to 2,500 homes on 27 Oct 2026. Half the site lies in Singland/Garryowen, so the `catchment_split` column shares its land and homes 50/50 between City Centre and Singland/Garryowen in the needs model.
 
 Everything else is either the build engine (`Limerick_Housing_Land_Register.gpkg`) or source data (`inputs/`).
 

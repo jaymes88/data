@@ -17,6 +17,20 @@ man = a.capacity_manual.eq('Yes') if 'capacity_manual' in a else pd.Series(False
 a['fixed_homes'] = a.unconsented_capacity.where(man, 0)          # sites with a manually set capacity keep it
 a.loc[man, 'uncons_ha'] = 0
 a['cons_left'] = (a.consented_units - a.built_units).clip(lower=0)
+# parcels shared between catchments (catchment_split, e.g. CITY-107 50/50 City Centre / Singland/Garryowen): one row per share
+if 'catchment_split' in a:
+    rows = []
+    for _, r in a.iterrows():
+        sp = str(r.catchment_split or '').strip()
+        if not sp or sp in ('nan', 'None'):
+            rows.append(r); continue
+        for part in sp.split(';'):
+            cat, w = part.rsplit(':', 1); w = float(w)
+            x = r.copy(); x['catchment'] = cat.strip()
+            for c in ['cons_left', 'uncons_ha', 'unconsented_capacity', 'fixed_homes']:
+                x[c] = r[c] * w
+            rows.append(x)
+    a = pd.DataFrame(rows)
 reg = a.groupby('catchment').agg(cons_left=('cons_left', 'sum'), uncons_ha=('uncons_ha', 'sum'), uncons_units=('unconsented_capacity', 'sum'), fixed=('fixed_homes', 'sum'),
                                  parcels=('parcel_id', 'size'))
 
@@ -108,6 +122,7 @@ notes = [
     'Identified supply = consented homes not yet built + the register’s zoned land without consent valued at the Council density. Surplus or shortfall = identified supply − homes needed 2026–2040.',
     'Additional land needed = the shortfall ÷ the Council density (net residential ha). With headroom: (homes needed × (1 + headroom) − identified supply) ÷ Council density. A catchment in surplus needs no additional land; its surplus is not moved to other catchments.',
     'Manually set capacity: where the register holds a capacity set by hand (column Q; e.g. the masterplanned city-centre site CITY-107, 2,500 homes), that figure is used instead of land × Council density, and its land is left out of column G.',
+    'Shared sites: the masterplanned city-centre site CITY-107 straddles City Centre and Singland/Garryowen, so its land and its 2,500 homes are split 50/50 between them.',
     'Supply as land = zoned land without consent + consented homes ÷ Council density, for comparison with the land needed column.',
     'Land register: Limerick_Housing_Land_Register.gpkg, parcels not yet finished (built-out parcels excluded), as at the October 2026 build. Zoned land without consent = developable area × the share of the parcel’s capacity not yet consented. It includes the city and county council audits, the analyst’s zoned-land estimates for towns the county audit does not cover, and council-supplied sites.',
     'The register’s own capacity for the same land (last column) uses the council audit and site densities, not the Variation No. 3 ranges, so it differs from “Homes on that land at Council density”.',

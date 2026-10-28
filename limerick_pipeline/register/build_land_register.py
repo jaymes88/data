@@ -559,6 +559,7 @@ for i, r in parcels.iterrows():
 # manual capacity overrides (in_review/manual_capacity.csv): the analyst's figure replaces any other, with the reason noted
 MANUAL = 'in_review/manual_capacity.csv'
 parcels['capacity_manual'] = ''
+parcels['catchment_split'] = ''
 if os.path.exists(MANUAL):
     MC = pd.read_csv(MANUAL, dtype={'parcel_id': str})
     for _, m in MC.iterrows():
@@ -569,6 +570,8 @@ if os.path.exists(MANUAL):
         parcels.loc[k, 'capacity_units'] = float(m.capacity_units)
         parcels.loc[k, 'capacity_basis'] = f'MANUAL OVERRIDE ({m.set_by}, {m.set_on}): {m.reason}'
         parcels.loc[k, 'capacity_manual'] = 'Yes'
+        if 'catchment_split' in MC and isinstance(m.catchment_split, str) and m.catchment_split.strip():
+            parcels.loc[k, 'catchment_split'] = m.catchment_split.strip()
         parcels.loc[k, 'notes'] = (parcels.loc[k, 'notes'].fillna('') + f'; capacity set manually to {int(m.capacity_units):,} homes on {m.set_on}'
                                    f' (was {was:,.0f}): {m.reason}').str.strip('; ')
         print('manual capacity:', m.parcel_id, was, '->', m.capacity_units)
@@ -706,6 +709,7 @@ DICT = [
     ('parcel_permissions', 'geod_new_vacant', 'Of the built addresses credited to the permission, how many GeoDirectory marks vacant.'),
     ('parcels', 'energy / ue_water / ue_wastewater', 'From the council capacity audit (May 2026): energy infrastructure, and Uisce Éireann water and wastewater capacity. Water and wastewater read "Y (permission granted)" where a live permission exists and the audit has no entry.'),
     ('parcels', 'capacity_manual', 'Yes where the capacity was set by hand (inputs/manual_capacity.csv); capacity_basis and notes give the reason and date.'),
+    ('parcels', 'catchment_split', 'Where a parcel straddles two catchments and its homes are shared between them in the needs model, e.g. "City Centre:0.5;Singland/Garryowen:0.5" (inputs/manual_capacity.csv).'),
     ('parcels', 'density_estimate_units', 'Indicative homes for the parcel from its area x the local median density of permitted Limerick schemes (density_tier, density_dph). Filled for every parcel so all land can be compared on one basis. Not used in the supply totals; on consent parcels the consented units are the figure that counts.'),
     ('parcel_summary', 'capacity_used', 'The unit figure the parcel is planned on: council or zoning capacity where there is one, otherwise the consented units. Always filled where the parcel has units.'),
     ('active_parcels', '(all fields)', 'parcel_summary without Finished parcels: the land still to deliver homes. Use this layer for maps of future supply.'),

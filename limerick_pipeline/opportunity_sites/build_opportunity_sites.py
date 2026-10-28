@@ -14,8 +14,38 @@ IN, OUT = 'in_opp/opp.gpkg', 'Limerick_Opportunity_Sites.gpkg'
 TODAY = datetime.date.today().isoformat()
 NET = 0.91          # developable share used in the land register (council city audit ratio); editable per site
 
-O = gpd.read_file(IN).to_crs(ITM).reset_index(drop=True)
-O['geometry'] = O.geometry.make_valid().buffer(0)
+import os, sys
+MASTER = sys.argv[1] if len(sys.argv) > 1 else None     # a returned copy of the register: its entries are kept
+C = gpd.read_file('Limerick_Housing_Land_Register.gpkg', layer='ref_study_catchments').to_crs(ITM)
+if MASTER:
+    M = gpd.read_file(MASTER, layer='opportunity_sites').to_crs(ITM).reset_index(drop=True)
+    M['geometry'] = M.geometry.make_valid().buffer(0)
+    new = M.opp_id.isna() | M.opp_id.astype(str).str.strip().isin(['', 'nan', 'None'])
+    # sites added without a settlement: the catchment they sit in, else the nearest existing site's settlement (within
+    # 1.5 km), else the nearest catchment
+    for i in M.index[new & (M.settlement.isna() | M.settlement.astype(str).str.strip().eq(''))]:
+        g = M.at[i, 'geometry']; p = g.representative_point()
+        inside = C[C.contains(p)]
+        old = M[~new]
+        d = old.distance(p)
+        if len(inside):
+            st = inside.catchment.iloc[0]
+            st = {'Moroe': 'Murroe'}.get(st, st)
+        elif len(d) and d.min() <= 1500:
+            st = old.at[d.idxmin(), 'settlement']
+        else:
+            st = C.loc[C.distance(p).idxmin(), 'catchment']
+        M.at[i, 'settlement'] = st
+    M['_new'] = new
+    rail = M.site_category.fillna('').str.startswith('Rail')
+    O = gpd.GeoDataFrame(dict(id=pd.to_numeric(M.source_id, errors='coerce'),
+                              site=M.settlement + np.where(rail, ' EXP', ''),
+                              area=M.area / 1e4,
+                              opp_area=np.where(M.council_opportunity_site.eq('Yes'), 'Y, ' + M.council_reference.fillna(''), ''),
+                              geometry=M.geometry), crs=ITM)
+else:
+    O = gpd.read_file(IN).to_crs(ITM).reset_index(drop=True)
+    O['geometry'] = O.geometry.make_valid().buffer(0)
 
 # ---------------------------------------------------------------- identity and location
 raw = O.site.fillna('').str.strip()
@@ -25,10 +55,17 @@ name = name.replace({'Singland/Garrowen': 'Singland/Garryowen'})
 O['settlement'] = name
 O['site_category'] = np.where(O.expansion, 'Rail corridor new town (long term)', 'Opportunity site')   # 'EXP' sites: new towns on rail lines
 O['_n'] = O.groupby('settlement').cumcount() + 1
-O['opp_id'] = 'OPP-' + O.settlement.str.upper().str.replace(r'[^A-Z]', '', regex=True).str[:12] + '-' + O._n.astype(str).str.zfill(3)
+pref = 'OPP-' + O.settlement.str.upper().str.replace(r'[^A-Z]', '', regex=True).str[:12] + '-'
+O['opp_id'] = pref + O._n.astype(str).str.zfill(3)
+if MASTER:                                                     # existing IDs never change; new sites continue the numbering
+    O.loc[~M._new, 'opp_id'] = M.loc[~M._new, 'opp_id']
+    for i in O.index[M._new]:
+        used = O.loc[O.opp_id.str.startswith(pref[i]) & ~M._new, 'opp_id'].tolist() + O.loc[:i - 1][M._new.loc[:i - 1]].opp_id.tolist()
+        n = max([int(x.rsplit('-', 1)[1]) for x in used if x.startswith(pref[i])] + [0]) + 1
+        O.at[i, 'opp_id'] = pref[i] + str(n).zfill(3)
+    assert O.opp_id.is_unique
 O['source_id'] = O.id.map(lambda v: '' if pd.isna(v) else str(int(v)))
 
-C = gpd.read_file('Limerick_Housing_Land_Register.gpkg', layer='ref_study_catchments').to_crs(ITM)
 LEA = gpd.read_file('Limerick_Housing_Supply.gpkg', layer='ref_local_electoral_areas').to_crs(ITM)
 pt = gpd.GeoDataFrame(geometry=O.representative_point(), crs=ITM)
 j = gpd.sjoin(pt, C[['catchment', 'catchment_type', 'geometry']], how='left', predicate='within')
@@ -177,6 +214,22 @@ cols = ['opp_id', 'source_id', 'site_category', 'settlement', 'catchment', 'catc
        ['density_assumed', 'density_basis', 'developable_share', 'indicative_homes', 'indicative_homes_not_in_register', 'capacity_confidence',
         'ownership_status', 'ownership_type', 'folio_ref', 'energy', 'ue_water', 'ue_wastewater', 'likely_route', 'timeframe', 'barriers',
         'status', 'priority', 'next_action', 'last_updated', 'updated_by', 'notes']
+# entries made in the returned register are kept over the defaults (auto fields are always recalculated)
+MANUAL = ['site_category', 'council_opportunity_site', 'council_reference', 'identified_by', 'identified_on', 'current_use', 'site_type',
+          'derelict_or_vacant_sites_register', 'constraint_flood_zone', 'constraint_protected_structure_or_aca', 'constraint_archaeology',
+          'constraint_ecology', 'constraint_access', 'constraint_contamination', 'developable_share', 'capacity_confidence',
+          'ownership_status', 'ownership_type', 'folio_ref', 'energy', 'ue_water', 'ue_wastewater', 'likely_route', 'timeframe',
+          'barriers', 'status', 'priority', 'next_action', 'updated_by', 'notes']
+if MASTER:
+    for c in MANUAL:
+        if c in M:
+            v = M[c]
+            ok = v.notna() & ~v.astype(str).str.strip().isin(['', 'nan', 'None'])
+            O.loc[ok, c] = v[ok]
+    O.loc[M._new, 'identified_on'] = TODAY[:7]
+    O['developable_share'] = pd.to_numeric(O.developable_share, errors='coerce').fillna(NET)
+    O['indicative_homes'] = (O.area_ha * O.developable_share * O.density_assumed).round(0)
+    O['indicative_homes_not_in_register'] = (O.indicative_homes * (1 - O.land_register_share)).round(0)
 OUTG = gpd.GeoDataFrame(O[cols + ['geometry']], geometry='geometry', crs=ITM)
 OUTG.to_file(OUT, layer='opportunity_sites', driver='GPKG')
 

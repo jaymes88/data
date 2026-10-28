@@ -28,4 +28,4 @@ Sites spotted on a desk review that look underused or worth investigating, for t
 
 Coded fields have drop-down lists stored in the GeoPackage, which QGIS shows as value lists. "Not yet checked" is kept separate from "Unknown after checking".
 
-Rerunning the build script overwrites the file. Once people start filling in the register, merge their edits rather than rerunning.
+**Updating:** run `python build_opportunity_sites.py <returned copy.gpkg>`. Every entry made in the returned copy is kept, existing IDs never change, new polygons get the next ID in their town (their settlement comes from the catchment they sit in), and the automatic fields are recalculated. The last returned copy is in `inputs/`.

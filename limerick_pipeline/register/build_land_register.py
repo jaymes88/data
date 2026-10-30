@@ -505,6 +505,13 @@ if os.path.exists(GEOD):
 # homes built to date: all units of a completed scheme, otherwise GeoDirectory's built count (part-built schemes)
 pp['units_built'] = np.where(pp.status.eq('Complete'), pp.units, np.minimum(pp.geod_new_built.fillna(0), pp.units))
 # delivery estimates cover only homes not yet built: homes GeoDirectory already shows built come off the earliest years first
+# later evidence (e.g. a building control commencement notice) overrides the status: inputs/status_overrides.csv
+_ovf = next((p for p in ('in_review/status_overrides.csv', 'inputs/status_overrides.csv') if os.path.exists(p)), None)
+if _ovf:
+    from status_overrides import apply as apply_overrides, band_params
+    _par, _bands = band_params(SUP)
+    pp = apply_overrides(pp, pd.read_csv(_ovf, dtype=str), _par, _bands)
+    pp['units_built'] = np.where(pp.status.eq('Complete'), pp.units, np.minimum(pp.geod_new_built.fillna(0), pp.units))
 from net_built import net_estimates
 pp = net_estimates(pp, YC)
 

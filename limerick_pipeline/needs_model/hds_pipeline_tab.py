@@ -334,13 +334,14 @@ C.column_dimensions['A'].width = 24
 C.sheet_state = 'visible'
 
 I = wb['Intro']
-for rr in range(31, 46):
+listed = {I.cell(rr, 2).value for rr in range(1, I.max_row + 1)}
+for rr in range(31, 46) if NAME not in listed else []:
     if I.cell(rr, 2).value == 'Opportunity sites & options':
         I.insert_rows(rr + 1)
         I.cell(rr + 1, 2, NAME).font = I.cell(rr, 2).font.copy()
         I.cell(rr + 1, 4, 'The planning pipeline, its expected completions, and how many homes need permission each year to meet the target (yellow levers for the timings).').font = I.cell(rr, 4).font.copy()
         break
-for rr in range(31, 50):
+for rr in range(31, 50) if 'Pipeline calc' not in listed else []:
     if I.cell(rr, 2).value == 'Data':
         I.insert_rows(rr + 1)
         I.cell(rr + 1, 2, 'Pipeline calc').font = I.cell(rr, 2).font.copy()

@@ -5,14 +5,14 @@ Built from Limerick_Housing_Land_Register.gpkg. Developer names per permission c
 (developer_names.py); the parcel's developer field lists the developers of its counted permissions. landowner is the
 council audit value, left for the council to complete.
 """
-import sqlite3
+import os, sqlite3
 import pandas as pd, geopandas as gpd
 
 REG = 'Limerick_Housing_Land_Register.gpkg'
 OUT = 'Limerick_Developable_Land.gpkg'
 
 ps = gpd.read_file(REG, layer='parcel_summary')
-DEV = pd.read_csv('in_review/developer_names.csv', dtype=str).fillna('').set_index('perm_id')
+DEV = pd.read_csv('in_review/developer_names.csv' if os.path.exists('in_review/developer_names.csv') else 'inputs/developer_names.csv', dtype=str).fillna('').set_index('perm_id')
 pp = pd.read_sql("select * from parcel_permissions where counts_toward_totals = 'Yes'", sqlite3.connect(REG))
 pp['developer'] = pp.perm_id.astype(str).map(DEV.developer).fillna('')
 dev = (pp[pp.developer.ne('')].sort_values('units', ascending=False).groupby('parcel_id').developer

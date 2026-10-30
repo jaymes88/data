@@ -504,6 +504,9 @@ if os.path.exists(GEOD):
     print('GeoDirectory', extract, pp.geod_suggestion.value_counts().to_dict(), 'units moved to Complete', pp.loc[app, 'units'].sum())
 # homes built to date: all units of a completed scheme, otherwise GeoDirectory's built count (part-built schemes)
 pp['units_built'] = np.where(pp.status.eq('Complete'), pp.units, np.minimum(pp.geod_new_built.fillna(0), pp.units))
+# delivery estimates cover only homes not yet built: homes GeoDirectory already shows built come off the earliest years first
+from net_built import net_estimates
+pp = net_estimates(pp, YC)
 
 # consent-only parcels: capacity = consented units on them
 cons_units = pp[pp.status.isin(LIVE)].groupby('parcel_id').units.sum()

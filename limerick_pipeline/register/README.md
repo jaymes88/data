@@ -130,3 +130,11 @@ Parcels that would otherwise add nothing get a capacity, with the reason in `cap
 ## Validation
 
 `validate_register.py` writes `Validation_Report.xlsx`: integrity checks (I), provenance against the live planning register, An Coimisiún Pleanála and BCMS (P), external checks against CSO (E), county audit readiness (C), and a stratified QA sample with planning links for a person to open. Rerun after every rebuild and after the county settlements audit is loaded.
+
+## Delivery estimates net of homes already built (30 October 2026)
+
+The yearly delivery estimates (`est_q4_2026` to `est_2031_plus`) now cover only homes not yet built. For each permission they add up to at most its units minus `units_built` (the GeoDirectory built count for part-built schemes), and any excess comes off the earliest years first (`net_built.py`, also called from `build_land_register.py`). Before this, 589 homes on 19 part-built schemes were in the estimates although GeoDirectory already showed them built; the largest was Greenpark SHD (121 of 371).
+
+Counted expected completions are now 8,106 (was 8,695): Q4 2026 293, 2027 1,723, 2028 1,711, 2029 1,955, 2030 851, 2031+ 1,574. The remaining difference from consented homes not yet built (8,262) is 156 homes in four stalled permissions, which are counted as consented but given no expected completions.
+
+The fix was applied to the saved register, workbook and land file with `python net_built.py`; `Validation_Report.xlsx` was not rerun.
